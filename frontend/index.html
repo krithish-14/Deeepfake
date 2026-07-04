@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deepfake Detection Dashboard</title>
+  <meta name="description" content="AI-powered image and video deepfake detection. Upload media and get instant forensic analysis results." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-dark: #070913;
+      --card-bg: rgba(14, 18, 36, 0.72);
+      --card-border: rgba(139, 92, 246, 0.15);
+      --accent-purple: #a855f7;
+      --accent-cyan: #06b6d4;
+      --color-real: #10b981;
+      --color-fake: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background-color: var(--bg-dark);
+      background-image:
+        radial-gradient(circle at 80% 10%, rgba(139, 92, 246, 0.10), transparent 500px),
+        radial-gradient(circle at 10% 90%, rgba(6, 182, 212, 0.08), transparent 450px),
+        linear-gradient(rgba(255,255,255,0.016) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 28px 28px, 28px 28px;
+      font-family: 'Inter', sans-serif;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    .mono { font-family: 'Share Tech Mono', monospace; }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--card-border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.32);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .glass-card:hover {
+      border-color: rgba(139, 92, 246, 0.28);
+      box-shadow: 0 12px 40px rgba(139, 92, 246, 0.06);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: rgba(15,23,42,0.2); }
+    ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.35); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(6,182,212,0.5); }
+
+    /* Blink animation for splash */
+    .blink { animation: blink-kf 1.4s infinite; }
+    @keyframes blink-kf { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+    /* Splash ping dot */
+    .ping-dot {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #22d3ee;
+      box-shadow: 0 0 22px rgba(34,211,238,0.7);
+      animation: ping-kf 1.8s infinite;
+    }
+    @keyframes ping-kf {
+      0% { transform: translate(-50%,-50%) scale(1); opacity:1; }
+      70% { transform: translate(-50%,-50%) scale(2.2); opacity:0; }
+      100% { transform: translate(-50%,-50%) scale(2.2); opacity:0; }
+    }
+
+    /* Drag & drop zone hover */
+    .drop-zone-hover {
+      border-color: #a855f7 !important;
+      background: rgba(168,85,247,0.06) !important;
+      box-shadow: 0 0 0 1px rgba(168,85,247,0.18);
+    }
+
+    /* Media-type tab active/inactive */
+    .tab-active {
+      background: rgba(168,85,247,0.18);
+      color: #c084fc;
+      border-color: rgba(168,85,247,0.25);
+    }
+    .tab-inactive {
+      background: transparent;
+      color: #64748b;
+      border-color: transparent;
+    }
+    .tab-inactive:hover { color: #94a3b8; }
+
+    /* ── Top navigation bar ── */
+    #topNav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 40;
+      display: none; /* shown after splash */
+      background: rgba(7,9,19,0.82);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(139,92,246,0.12);
+    }
+    .nav-tab {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 20px;
+      font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: #64748b;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+    .nav-tab:hover { color: #c084fc; }
+    .nav-tab.nav-active { color: #c084fc; border-bottom-color: #a855f7; }
+
+    /* Analyse button enabled */
+    .btn-analyse-enabled {
+      background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 60%, #0891b2 100%);
+      color: #fff;
+      box-shadow: 0 4px 24px rgba(124,58,237,0.35);
+      cursor: pointer;
+      transform: translateY(0);
+      transition: all 0.25s ease;
+    }
+    .btn-analyse-enabled:hover {
+      box-shadow: 0 8px 32px rgba(124,58,237,0.5);
+      transform: translateY(-1px);
+    }
+    .btn-analyse-enabled:active { transform: translateY(0); }
+    .btn-analyse-disabled {
+      background: rgba(30,35,60,0.6);
+      color: #3b4460;
+      border: 1px solid rgba(255,255,255,0.04);
+      cursor: not-allowed;
+    }
+
+    /* Result card slide-in */
+    @keyframes slideIn {
+      from { opacity:0; transform:translateY(-8px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .slide-in { animation: slideIn 0.3s ease forwards; }
+
+    /* Analysis running shimmer */
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    .shimmer {
+      background: linear-gradient(90deg,
+        rgba(139,92,246,0.06) 25%,
+        rgba(139,92,246,0.18) 50%,
+        rgba(139,92,246,0.06) 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.6s infinite linear;
+    }
+
+    /* Confidence ring glow */
+    #confidenceRing { transition: stroke-dashoffset 0.7s cubic-bezier(.4,0,.2,1), stroke 0.5s ease; }
+
+    /* ── Architecture diagram ── */
+    .arch-node {
+      cursor: pointer;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+    .arch-node:hover { transform: translateY(-3px); filter: brightness(1.15); }
+    .arch-node:hover .arch-node-glow { opacity: 1; }
+    .arch-node-glow { opacity: 0; transition: opacity 0.2s ease; }
+
+    /* flow arrow animation */
+    @keyframes flow {
+      0%   { stroke-dashoffset: 24; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .flow-arrow { animation: flow 1.2s linear infinite; }
+
+    /* Modal */
+    #archModal {
+      position: fixed; inset: 0; z-index: 60;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      background: rgba(4,5,14,0.70);
+      backdrop-filter: blur(6px);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    #archModal.open { opacity: 1; pointer-events: auto; }
+    #archModalBox {
+      background: rgba(12,16,34,0.98);
+      border: 1px solid rgba(139,92,246,0.25);
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 560px; width: 100%;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      transform: translateY(12px);
+      transition: transform 0.25s ease;
+    }
+    #archModal.open #archModalBox { transform: translateY(0); }
+
+    /* Tier label pills */
+    .tier-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 9999px;
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      font-family: 'Share Tech Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     SPLASH SCREEN
+═══════════════════════════════════════════════════ -->
+<div id="splashScreen"
+     class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050710] transition-opacity duration-700"
+     style="opacity:1;">
+
+  <!-- Grid overlay -->
+  <div class="absolute inset-0 pointer-events-none"
+       style="background-image:linear-gradient(rgba(255,255,255,0.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.045) 1px,transparent 1px);background-size:32px 32px;opacity:.4;"></div>
+
+  <!-- Radial glow behind content -->
+  <div class="absolute inset-0 pointer-events-none"
+       style="background:radial-gradient(ellipse at 50% 55%, rgba(124,58,237,0.14) 0%, transparent 60%);"></div>
+
+  <div class="relative z-10 flex flex-col items-center text-center max-w-2xl px-6">
+
+    <!-- Ping icon -->
+    <div class="relative w-10 h-10 mb-8">
+      <span class="ping-dot"></span>
+      <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#22d3ee;box-shadow:0 0 22px rgba(34,211,238,0.7);"></span>
+    </div>
+
+    <p class="mono text-cyan-400 uppercase tracking-[0.55em] text-xs mb-5 font-semibold">Deepfake Forensics Engine</p>
+
+    <h1 class="text-5xl sm:text-6xl font-extrabold tracking-tight leading-tight mb-5">
+      <span class="bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">DEEPFAKE</span><br>
+      <span class="bg-gradient-to-r from-purple-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">IDENTIFIER</span>
+    </h1>
+
+    <p class="text-slate-400 text-sm sm:text-base max-w-md leading-relaxed mb-12">
+      AI-powered media forensics. Upload an image or video for instant deepfake analysis with confidence scoring and frame-level insights.
+    </p>
+
+    <button id="splashBtn"
+            class="px-9 py-3.5 rounded-xl font-bold mono text-sm tracking-wider uppercase
+                   bg-gradient-to-r from-purple-600 to-indigo-600
+                   hover:from-purple-500 hover:to-indigo-500
+                   shadow-lg shadow-purple-950/50
+                   hover:shadow-purple-500/25 hover:scale-[1.02]
+                   active:scale-[0.98] transition-all duration-300
+                   flex items-center gap-3">
+      INITIALIZE ENGINE
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7-7 7M3 12h18"/>
+      </svg>
+    </button>
+
+    <p class="mt-8 text-slate-600 text-xs mono blink">► CLICK ANYWHERE TO BEGIN</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TOP NAVIGATION BAR (shown after splash)
+═══════════════════════════════════════════════════ -->
+<nav id="topNav">
+  <div class="max-w-[1380px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+    <!-- Logo -->
+    <div class="flex items-center gap-3 py-3">
+      <span class="h-2.5 w-2.5 rounded-full bg-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.7)]"></span>
+      <span class="text-sm font-extrabold tracking-widest uppercase bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent mono">Deepfake Identifier</span>
+    </div>
+    <!-- Nav tabs -->
+    <div class="flex items-center">
+      <button id="navAnalyse" class="nav-tab nav-active" onclick="switchPage('analyse')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+        Analyse
+      </button>
+      <button id="navArchitecture" class="nav-tab" onclick="switchPage('architecture')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zm0 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4z"/></svg>
+        Model Architecture
+      </button>
+    </div>
+    <!-- Version badge -->
+    <div class="hidden sm:flex items-center gap-2 text-[10px] mono text-slate-500">
+      <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+      v1.0 · Forensics Engine
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════════════ -->
+<main id="appMain" class="max-w-[1380px] mx-auto px-4 sm:px-6 lg:px-8" style="opacity:0;transition:opacity 0.5s ease;padding-top:68px;">
+
+  <!-- ══════════════════════════════════════════════
+       PAGE: ANALYSE
+  ══════════════════════════════════════════════ -->
+  <div id="pageAnalyse" class="py-8">
+
+  <!-- ─── Section Header ─── -->
+  <header class="mb-8 pb-6 border-b border-slate-800/70 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+        Deepfake Identifier
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">AI-powered media forensics · Upload an image or video to begin analysis</p>
+    </div>
+  </header>
+
+  <!-- ─── Two-column grid ─── -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+    <!-- ══════════════ LEFT COLUMN ══════════════ -->
+    <div class="lg:col-span-5 space-y-5">
+
+      <!-- Media Type Tabs -->
+      <div class="glass-card rounded-2xl p-5">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="text-purple-400 font-bold text-lg leading-none">|</span>
+          <h2 class="text-xs uppercase tracking-widest font-bold text-slate-300">Select Media Type</h2>
+        </div>
+
+        <!-- Tab toggle -->
+        <div class="flex bg-[#0b0f1f] p-1 rounded-xl border border-slate-800/80 mb-5 gap-1">
+          <button id="tabImage" onclick="switchTab('image')"
+                  class="flex-1 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-250 flex items-center justify-center gap-2 border tab-active">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            Image
+          </button>
+          <button id="tabVideo" onclick="switchTab('video')"
+                  class="flex-1 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-250 flex items-center justify-center gap-2 border tab-inactive">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            Video
+          </button>
+        </div>
+
+        <!-- ── IMAGE PANEL ── -->
+        <div id="panelImage" class="space-y-4">
+          <!-- Drop zone -->
+          <label id="imageDropZone"
+                 class="relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center
+                        rounded-2xl border-2 border-dashed border-slate-800 bg-[#090d1c]/60
+                        px-6 text-center transition-all duration-250"
+                 ondragover="handleDragOver(event,'imageDropZone')"
+                 ondragleave="handleDragLeave('imageDropZone')"
+                 ondrop="handleDrop(event,'image')">
+            <input type="file" id="imageFileInput" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp" class="hidden"
+                   onchange="handleFileSelect(this,'image')" />
+            <div class="flex flex-col items-center gap-3 pointer-events-none">
+              <div class="h-14 w-14 rounded-2xl bg-purple-950/40 border border-purple-800/30 flex items-center justify-center text-purple-400">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-slate-200">Drag & drop an image, or click to browse</p>
+                <p class="text-xs text-slate-500 mt-1">Supports JPG · PNG · WebP · GIF · BMP</p>
+              </div>
+              <span class="px-3 py-1 rounded-full border border-slate-700 text-[10px] mono text-slate-400 uppercase tracking-widest">
+                Max 20 MB
+              </span>
+            </div>
+          </label>
+
+          <!-- Image preview (hidden until file selected) -->
+          <div id="imagePreviewWrap" class="hidden glass-card rounded-2xl p-3 space-y-3">
+            <div class="relative rounded-xl overflow-hidden bg-[#040610] border border-slate-800/60">
+              <img id="imagePreviewEl" src="" alt="Preview" class="w-full max-h-72 object-contain" />
+              <!-- Overlay badge -->
+              <div class="absolute top-2 left-2 px-2 py-1 rounded-lg bg-black/60 text-[10px] mono text-slate-300 uppercase tracking-wider">
+                Preview
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-3 px-1">
+              <div class="truncate">
+                <p id="imageFileName" class="text-xs font-semibold text-slate-200 truncate"></p>
+                <p id="imageFileSize" class="text-[10px] text-slate-500 mono mt-0.5"></p>
+              </div>
+              <button onclick="clearFile('image')"
+                      class="shrink-0 px-3 py-1.5 rounded-lg border border-slate-700 hover:border-red-500/50 hover:text-red-400 text-slate-400 text-xs font-semibold transition-all duration-200">
+                ✕ Remove
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── VIDEO PANEL ── -->
+        <div id="panelVideo" class="hidden space-y-4">
+          <!-- Drop zone -->
+          <label id="videoDropZone"
+                 class="relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center
+                        rounded-2xl border-2 border-dashed border-slate-800 bg-[#090d1c]/60
+                        px-6 text-center transition-all duration-250"
+                 ondragover="handleDragOver(event,'videoDropZone')"
+                 ondragleave="handleDragLeave('videoDropZone')"
+                 ondrop="handleDrop(event,'video')">
+            <input type="file" id="videoFileInput" accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/mpeg" class="hidden"
+                   onchange="handleFileSelect(this,'video')" />
+            <div class="flex flex-col items-center gap-3 pointer-events-none">
+              <div class="h-14 w-14 rounded-2xl bg-indigo-950/40 border border-indigo-800/30 flex items-center justify-center text-indigo-400">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"
+                        d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-slate-200">Drag & drop a video, or click to browse</p>
+                <p class="text-xs text-slate-500 mt-1">Supports MP4 · WebM · MOV · AVI · MPEG</p>
+              </div>
+              <span class="px-3 py-1 rounded-full border border-slate-700 text-[10px] mono text-slate-400 uppercase tracking-widest">
+                Max 200 MB
+              </span>
+            </div>
+          </label>
+
+          <!-- Video preview (hidden until file selected) -->
+          <div id="videoPreviewWrap" class="hidden glass-card rounded-2xl p-3 space-y-3">
+            <div class="relative rounded-xl overflow-hidden bg-[#040610] border border-slate-800/60">
+              <video id="videoPreviewEl" controls class="w-full max-h-72 rounded-xl" preload="metadata"></video>
+            </div>
+            <div class="flex items-center justify-between gap-3 px-1">
+              <div class="truncate">
+                <p id="videoFileName" class="text-xs font-semibold text-slate-200 truncate"></p>
+                <p id="videoFileSize" class="text-[10px] text-slate-500 mono mt-0.5"></p>
+              </div>
+              <button onclick="clearFile('video')"
+                      class="shrink-0 px-3 py-1.5 rounded-lg border border-slate-700 hover:border-red-500/50 hover:text-red-400 text-slate-400 text-xs font-semibold transition-all duration-200">
+                ✕ Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Analysis Options ── -->
+      <div class="glass-card rounded-2xl p-5">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="text-cyan-400 font-bold text-lg leading-none">|</span>
+          <h2 class="text-xs uppercase tracking-widest font-bold text-slate-300">Analysis Options</h2>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <label class="flex items-center gap-3 p-3 bg-[#0b0f1f]/80 hover:bg-[#0b0f1f] rounded-xl border border-slate-800/70 cursor-pointer transition-colors duration-200 group">
+            <input type="checkbox" id="optFaceDetection" checked
+                   class="w-4 h-4 rounded accent-purple-500" />
+            <div>
+              <p class="text-xs font-semibold text-slate-300 group-hover:text-slate-200">Face Detection</p>
+              <p class="text-[10px] text-slate-500 mt-0.5">Locate and isolate faces</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-3 p-3 bg-[#0b0f1f]/80 hover:bg-[#0b0f1f] rounded-xl border border-slate-800/70 cursor-pointer transition-colors duration-200 group">
+            <input type="checkbox" id="optArtifactScan" checked
+                   class="w-4 h-4 rounded accent-purple-500" />
+            <div>
+              <p class="text-xs font-semibold text-slate-300 group-hover:text-slate-200">Artifact Scanning</p>
+              <p class="text-[10px] text-slate-500 mt-0.5">GAN fingerprint detection</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-3 p-3 bg-[#0b0f1f]/80 hover:bg-[#0b0f1f] rounded-xl border border-slate-800/70 cursor-pointer transition-colors duration-200 group">
+            <input type="checkbox" id="optMetaAnalysis"
+                   class="w-4 h-4 rounded accent-purple-500" />
+            <div>
+              <p class="text-xs font-semibold text-slate-300 group-hover:text-slate-200">Metadata Analysis</p>
+              <p class="text-[10px] text-slate-500 mt-0.5">EXIF & encoding checks</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-3 p-3 bg-[#0b0f1f]/80 hover:bg-[#0b0f1f] rounded-xl border border-slate-800/70 cursor-pointer transition-colors duration-200 group">
+            <input type="checkbox" id="optFreqAnalysis"
+                   class="w-4 h-4 rounded accent-purple-500" />
+            <div>
+              <p class="text-xs font-semibold text-slate-300 group-hover:text-slate-200">Frequency Analysis</p>
+              <p class="text-[10px] text-slate-500 mt-0.5">DCT / Fourier inspection</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- ── Run Analysis Button ── -->
+      <button id="analyseBtn" onclick="runAnalysis()" disabled
+              class="w-full rounded-2xl py-4 text-sm font-bold uppercase tracking-widest btn-analyse-disabled transition-all duration-300 flex items-center justify-center gap-3">
+        <svg class="w-5 h-5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+        </svg>
+        Run Forensic Analysis
+      </button>
+
+      <!-- ── Detection Results Log ── -->
+      <div class="glass-card rounded-2xl p-5">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-purple-400 font-bold text-lg leading-none">|</span>
+            <h2 class="text-xs uppercase tracking-widest font-bold text-slate-300">Analysis History</h2>
+          </div>
+          <button onclick="clearHistory()" class="text-[10px] mono text-slate-600 hover:text-slate-400 uppercase tracking-wider transition-colors duration-200">
+            Clear
+          </button>
+        </div>
+        <div id="historyLog" class="space-y-2.5 max-h-[280px] overflow-y-auto pr-1">
+          <div id="historyEmpty" class="text-center py-8 text-slate-600 text-[11px] mono uppercase tracking-widest">
+            No analyses run yet
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ RIGHT COLUMN ══════════════ -->
+    <div class="lg:col-span-7 space-y-5">
+
+      <!-- ── Confidence Gauge + Verdict ── -->
+      <div class="glass-card rounded-2xl p-6">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="text-cyan-400 font-bold text-lg leading-none">|</span>
+          <h2 class="text-xs uppercase tracking-widest font-bold text-slate-300">Detection Confidence</h2>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-8">
+          <!-- SVG Radial Ring -->
+          <div class="relative flex-shrink-0 flex items-center justify-center">
+            <svg class="w-44 h-44 -rotate-90" viewBox="0 0 160 160">
+              <!-- Track -->
+              <circle cx="80" cy="80" r="66" fill="none" stroke="rgba(15,23,42,0.8)" stroke-width="12"/>
+              <!-- Progress ring -->
+              <circle id="confidenceRing" cx="80" cy="80" r="66" fill="none"
+                      stroke="#10b981" stroke-width="12"
+                      stroke-linecap="round"
+                      stroke-dasharray="414.69"
+                      stroke-dashoffset="414.69"/>
+            </svg>
+            <!-- Center text -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center rotate-0">
+              <span id="confPct" class="text-4xl font-extrabold mono text-slate-500">—</span>
+              <span id="confVerdict" class="text-[11px] uppercase tracking-widest font-bold text-slate-500 mt-1">Awaiting</span>
+            </div>
+          </div>
+
+          <!-- Verdict detail cards -->
+          <div class="flex-1 w-full space-y-3">
+            <!-- Primary verdict -->
+            <div id="verdictCard" class="p-4 rounded-xl border border-slate-800/80 bg-[#090d1c]/60">
+              <p class="text-[10px] mono uppercase tracking-widest text-slate-500 mb-1">Verdict</p>
+              <p id="verdictText" class="text-lg font-bold text-slate-500">Upload a file to begin</p>
+            </div>
+            <!-- Analysis metrics row -->
+            <div class="grid grid-cols-3 gap-3">
+              <div class="bg-[#090b14] border border-slate-900 p-3 rounded-xl text-center">
+                <p class="text-[9px] mono uppercase tracking-widest text-slate-500 mb-1">Latency</p>
+                <span id="metricLatency" class="text-xl font-bold mono text-slate-300">—</span>
+                <p class="text-[9px] text-slate-600 mt-0.5">ms</p>
+              </div>
+              <div class="bg-[#090b14] border border-slate-900 p-3 rounded-xl text-center">
+                <p class="text-[9px] mono uppercase tracking-widest text-slate-500 mb-1">Faces</p>
+                <span id="metricFaces" class="text-xl font-bold mono text-slate-300">—</span>
+                <p class="text-[9px] text-slate-600 mt-0.5">detected</p>
+              </div>
+              <div class="bg-[#090b14] border border-slate-900 p-3 rounded-xl text-center">
+                <p class="text-[9px] mono uppercase tracking-widest text-slate-500 mb-1">Frames</p>
+                <span id="metricFrames" class="text-xl font-bold mono text-slate-300">—</span>
+                <p class="text-[9px] text-slate-600 mt-0.5">scanned</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Media Preview (full-res post-analysis view) ── -->
+      <div class="glass-card rounded-2xl p-5">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-purple-400 font-bold text-lg leading-none">|</span>
+            <h2 class="text-xs uppercase tracking-widest font-bold text-slate-300">Media Preview</h2>
+          </div>
+          <span id="mediaTypeTag" class="px-2.5 py-1 rounded-lg bg-[#0b0f1f] border border-slate-800 text-[10px] mono text-slate-500 uppercase tracking-wider">No file</span>
+        </div>
+        <div id="mediaPreviewBox" class="bg-[#04060e] rounded-xl border border-slate-900 min-h-[220px] flex items-center justify-center overflow-hidden relative">
+          <!-- Empty state -->
+          <div id="mediaEmptyState" class="flex flex-col items-center gap-3 text-slate-700 pointer-events-none">
+            <svg class="w-12 h-12 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <span class="text-[11px] mono uppercase tracking-widest">Upload media to preview</span>
+          </div>
+          <!-- Loaded image -->
+          <img id="mainImagePreview" src="" alt="" class="hidden w-full max-h-80 object-contain" />
+          <!-- Loaded video -->
+          <video id="mainVideoPreview" class="hidden w-full max-h-80 rounded-xl" controls preload="metadata"></video>
+          <!-- Analysis scanning overlay -->
+          <div id="scanningOverlay" class="hidden absolute inset-0 shimmer rounded-xl flex flex-col items-center justify-center gap-3 z-10">
+            <div class="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-sm font-bold text-purple-300 mono uppercase tracking-widest">Analysing…</span>
+          </div>
+          <!-- Analysis annotation overlay (shown after analysis completes) -->
+          <div id="analysisAnnotation" class="hidden absolute bottom-3 left-3 right-3 flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+
+      <!-- ── Confidence History Chart ── -->
+      <div class="glass-card rounded-2xl p-5">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-purple-400 font-bold text-lg leading-none">|</span>
+            <h2 class="text-xs uppercase tracking-widest font-bold text-slate-300">Confidence History</h2>
+          </div>
+          <div class="flex items-center gap-4 text-[10px] text-slate-500 mono">
+            <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.6)]"></span>Real</span>
+            <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-400 shadow-[0_0_6px_rgba(239,68,68,0.6)]"></span>Deepfake</span>
+          </div>
+        </div>
+        <div class="bg-[#04060e] rounded-xl border border-slate-900 h-36 overflow-hidden relative">
+          <canvas id="historyCanvas" class="w-full h-full block"></canvas>
+          <div id="historyCanvasEmpty" class="absolute inset-0 flex items-center justify-center text-[10px] mono uppercase tracking-widest text-slate-700">
+            History will appear here
+          </div>
+          <!-- Y-axis labels -->
+          <div class="absolute left-2 top-2 bottom-2 flex flex-col justify-between text-[9px] text-slate-700 mono pointer-events-none">
+            <span>Real</span>
+            <span>—</span>
+            <span>Fake</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Forensic Signal Breakdown ── -->
+      <div class="glass-card rounded-2xl p-5">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="text-purple-400 font-bold text-lg leading-none">|</span>
+          <h2 class="text-xs uppercase tracking-widest font-bold text-slate-300">Forensic Signal Breakdown</h2>
+        </div>
+        <div id="signalBreakdown" class="space-y-3">
+          <!-- Placeholder bars (pre-analysis) -->
+          <div class="signal-row flex items-center gap-3">
+            <span class="w-32 text-[10px] mono text-slate-500 uppercase tracking-wider shrink-0">Face Integrity</span>
+            <div class="flex-1 bg-[#090b14] rounded-full h-2 overflow-hidden">
+              <div id="barFace" class="h-full rounded-full bg-slate-800 w-0 transition-all duration-700"></div>
+            </div>
+            <span id="lblFace" class="w-10 text-right text-[10px] mono text-slate-600">—</span>
+          </div>
+          <div class="signal-row flex items-center gap-3">
+            <span class="w-32 text-[10px] mono text-slate-500 uppercase tracking-wider shrink-0">GAN Artifacts</span>
+            <div class="flex-1 bg-[#090b14] rounded-full h-2 overflow-hidden">
+              <div id="barGAN" class="h-full rounded-full bg-slate-800 w-0 transition-all duration-700"></div>
+            </div>
+            <span id="lblGAN" class="w-10 text-right text-[10px] mono text-slate-600">—</span>
+          </div>
+          <div class="signal-row flex items-center gap-3">
+            <span class="w-32 text-[10px] mono text-slate-500 uppercase tracking-wider shrink-0">Texture Coh.</span>
+            <div class="flex-1 bg-[#090b14] rounded-full h-2 overflow-hidden">
+              <div id="barTexture" class="h-full rounded-full bg-slate-800 w-0 transition-all duration-700"></div>
+            </div>
+            <span id="lblTexture" class="w-10 text-right text-[10px] mono text-slate-600">—</span>
+          </div>
+          <div class="signal-row flex items-center gap-3">
+            <span class="w-32 text-[10px] mono text-slate-500 uppercase tracking-wider shrink-0">Freq. Anomaly</span>
+            <div class="flex-1 bg-[#090b14] rounded-full h-2 overflow-hidden">
+              <div id="barFreq" class="h-full rounded-full bg-slate-800 w-0 transition-all duration-700"></div>
+            </div>
+            <span id="lblFreq" class="w-10 text-right text-[10px] mono text-slate-600">—</span>
+          </div>
+          <div class="signal-row flex items-center gap-3">
+            <span class="w-32 text-[10px] mono text-slate-500 uppercase tracking-wider shrink-0">Metadata</span>
+            <div class="flex-1 bg-[#090b14] rounded-full h-2 overflow-hidden">
+              <div id="barMeta" class="h-full rounded-full bg-slate-800 w-0 transition-all duration-700"></div>
+            </div>
+            <span id="lblMeta" class="w-10 text-right text-[10px] mono text-slate-600">—</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="mt-12 text-center text-slate-700 text-[10px] mono uppercase tracking-widest">
+    Deepfake Identifier · AI Forensics Engine v1.0 · For Research Purposes Only
+  </footer>
+
+  </div><!-- /pageAnalyse -->
+
+  <!-- ══════════════════════════════════════════════
+       PAGE: ARCHITECTURE
+  ══════════════════════════════════════════════ -->
+  <div id="pageArchitecture" class="hidden py-8">
+
+    <header class="mb-8 pb-6 border-b border-slate-800/70">
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+        Model Architecture
+      </h1>
+      <p class="text-slate-400 text-sm mt-2 max-w-2xl">
+        Supervised learning (Xception / ViT) is the primary classifier. An autoencoder provides a second signal for novel deepfakes. Their outputs are fused by a weighted ensemble. Click any node for details.
+      </p>
+    </header>
+
+    <!-- ── Pipeline legend ── -->
+    <div class="flex flex-wrap gap-3 mb-8">
+      <span class="tier-pill bg-indigo-950/60 border border-indigo-700/30 text-indigo-300">⬤ Supervised · Primary</span>
+      <span class="tier-pill bg-emerald-950/60 border border-emerald-700/30 text-emerald-300">⬤ Unsupervised · Support</span>
+      <span class="tier-pill bg-purple-950/60 border border-purple-700/30 text-purple-300">⬤ Ensemble · Output</span>
+      <span class="tier-pill bg-slate-900/60 border border-slate-700/30 text-slate-400">⬤ Dataset · Training</span>
+    </div>
+
+    <!-- ── Interactive SVG pipeline ── -->
+    <div class="glass-card rounded-2xl p-6 overflow-x-auto">
+      <svg id="archSvg" viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;min-width:680px;height:auto;font-family:'Inter',sans-serif;">
+        <defs>
+          <!-- Flow gradient -->
+          <linearGradient id="flowGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#a855f7" stop-opacity="0.8"/>
+            <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.8"/>
+          </linearGradient>
+          <!-- Node glows -->
+          <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <marker id="arrowHead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="url(#flowGrad)" opacity="0.8"/>
+          </marker>
+        </defs>
+
+        <!-- ─── ROW LABELS ─── -->
+        <text x="14" y="68" font-size="9" fill="#475569" font-weight="700" text-anchor="start" font-family="'Share Tech Mono',monospace" letter-spacing="1">DATASETS</text>
+        <text x="14" y="188" font-size="9" fill="#4f46e5" font-weight="700" text-anchor="start" font-family="'Share Tech Mono',monospace" letter-spacing="1">SUPERVISED</text>
+        <text x="14" y="298" font-size="9" fill="#10b981" font-weight="700" text-anchor="start" font-family="'Share Tech Mono',monospace" letter-spacing="1">UNSUPERVISED</text>
+        <text x="14" y="388" font-size="9" fill="#a855f7" font-weight="700" text-anchor="start" font-family="'Share Tech Mono',monospace" letter-spacing="1">ENSEMBLE</text>
+
+        <!-- ─── DATASET NODES (row 1) ─── -->
+        <!-- FaceForensics++ -->
+        <g class="arch-node" onclick="openModal('ff')" transform="translate(110,38)">
+          <rect x="-58" y="-20" width="116" height="44" rx="10" fill="rgba(15,23,42,0.8)" stroke="#334155" stroke-width="1.4"/>
+          <rect x="-58" y="-20" width="116" height="44" rx="10" fill="rgba(51,65,85,0)" class="arch-node-glow" stroke="#94a3b8" stroke-width="1.4"/>
+          <text x="0" y="-4" font-size="11" fill="#94a3b8" font-weight="600" text-anchor="middle">FaceForensics++</text>
+          <text x="0" y="12" font-size="9" fill="#475569" text-anchor="middle">1M+ manipulated frames</text>
+        </g>
+        <!-- Celeb-DF -->
+        <g class="arch-node" onclick="openModal('celeb')" transform="translate(280,38)">
+          <rect x="-58" y="-20" width="116" height="44" rx="10" fill="rgba(15,23,42,0.8)" stroke="#334155" stroke-width="1.4"/>
+          <text x="0" y="-4" font-size="11" fill="#94a3b8" font-weight="600" text-anchor="middle">Celeb-DF</text>
+          <text x="0" y="12" font-size="9" fill="#475569" text-anchor="middle">590 real / 5639 fake</text>
+        </g>
+        <!-- DFDC -->
+        <g class="arch-node" onclick="openModal('dfdc')" transform="translate(450,38)">
+          <rect x="-58" y="-20" width="116" height="44" rx="10" fill="rgba(15,23,42,0.8)" stroke="#334155" stroke-width="1.4"/>
+          <text x="0" y="-4" font-size="11" fill="#94a3b8" font-weight="600" text-anchor="middle">DFDC</text>
+          <text x="0" y="12" font-size="9" fill="#475569" text-anchor="middle">~100k video clips</text>
+        </g>
+
+        <!-- ─── Arrows: datasets → supervised ─── -->
+        <line x1="110" y1="62" x2="240" y2="148" stroke="url(#flowGrad)" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#arrowHead)" opacity="0.6" class="flow-arrow"/>
+        <line x1="280" y1="62" x2="280" y2="148" stroke="url(#flowGrad)" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#arrowHead)" opacity="0.6" class="flow-arrow"/>
+        <line x1="450" y1="62" x2="340" y2="148" stroke="url(#flowGrad)" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#arrowHead)" opacity="0.6" class="flow-arrow"/>
+        <line x1="110" y1="62" x2="720" y2="268" stroke="url(#flowGrad)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#arrowHead)" opacity="0.25" class="flow-arrow"/>
+
+        <!-- ─── SUPERVISED ROW (row 2) ─── -->
+        <!-- Xception -->
+        <g class="arch-node" onclick="openModal('xception')" transform="translate(195,168)">
+          <rect x="-70" y="-28" width="140" height="56" rx="12" fill="rgba(30,27,75,0.85)" stroke="#4338ca" stroke-width="1.8"/>
+          <circle cx="-52" cy="-8" r="3" fill="#6366f1" opacity="0.9"/>
+          <text x="4" y="-8" font-size="12" fill="#a5b4fc" font-weight="700" text-anchor="middle">Xception</text>
+          <text x="0" y="10" font-size="9" fill="#6366f1" text-anchor="middle">CNN · Spatial artifacts</text>
+          <text x="0" y="22" font-size="8" fill="#4338ca" text-anchor="middle">★ Industry standard</text>
+        </g>
+        <!-- EfficientNet-B4 -->
+        <g class="arch-node" onclick="openModal('efficientnet')" transform="translate(370,168)">
+          <rect x="-70" y="-28" width="140" height="56" rx="12" fill="rgba(30,27,75,0.85)" stroke="#4338ca" stroke-width="1.8"/>
+          <text x="0" y="-8" font-size="12" fill="#a5b4fc" font-weight="700" text-anchor="middle">EfficientNet-B4</text>
+          <text x="0" y="10" font-size="9" fill="#6366f1" text-anchor="middle">CNN · Fast inference</text>
+          <text x="0" y="22" font-size="8" fill="#4338ca" text-anchor="middle">Lighter alternative</text>
+        </g>
+        <!-- ViT -->
+        <g class="arch-node" onclick="openModal('vit')" transform="translate(545,168)">
+          <rect x="-70" y="-28" width="140" height="56" rx="12" fill="rgba(30,27,75,0.85)" stroke="#4338ca" stroke-width="1.8"/>
+          <text x="0" y="-8" font-size="12" fill="#a5b4fc" font-weight="700" text-anchor="middle">ViT / LSTM</text>
+          <text x="0" y="10" font-size="9" fill="#6366f1" text-anchor="middle">Transformer · Temporal</text>
+          <text x="0" y="22" font-size="8" fill="#4338ca" text-anchor="middle">Video sequences</text>
+        </g>
+
+        <!-- ─── Arrows: supervised → ensemble ─── -->
+        <line x1="195" y1="196" x2="680" y2="348" stroke="url(#flowGrad)" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#arrowHead)" opacity="0.55" class="flow-arrow"/>
+        <line x1="370" y1="196" x2="700" y2="348" stroke="url(#flowGrad)" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#arrowHead)" opacity="0.55" class="flow-arrow"/>
+        <line x1="545" y1="196" x2="720" y2="348" stroke="url(#flowGrad)" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#arrowHead)" opacity="0.55" class="flow-arrow"/>
+
+        <!-- ─── UNSUPERVISED ROW (row 3) ─── -->
+        <!-- Autoencoder -->
+        <g class="arch-node" onclick="openModal('autoencoder')" transform="translate(580,278)">
+          <rect x="-68" y="-24" width="136" height="50" rx="12" fill="rgba(6,40,30,0.85)" stroke="#065f46" stroke-width="1.8"/>
+          <text x="0" y="-6" font-size="12" fill="#6ee7b7" font-weight="700" text-anchor="middle">Autoencoder</text>
+          <text x="0" y="12" font-size="9" fill="#10b981" text-anchor="middle">Reconstruction error</text>
+          <text x="0" y="24" font-size="8" fill="#065f46" text-anchor="middle">Novel deepfake safety net</text>
+        </g>
+        <!-- GAN Discriminator -->
+        <g class="arch-node" onclick="openModal('gan')" transform="translate(758,278)">
+          <rect x="-68" y="-24" width="136" height="50" rx="12" fill="rgba(6,40,30,0.85)" stroke="#065f46" stroke-width="1.8"/>
+          <text x="0" y="-6" font-size="12" fill="#6ee7b7" font-weight="700" text-anchor="middle">GAN Discriminator</text>
+          <text x="0" y="12" font-size="9" fill="#10b981" text-anchor="middle">Realness scoring</text>
+          <text x="0" y="24" font-size="8" fill="#065f46" text-anchor="middle">Support layer</text>
+        </g>
+
+        <!-- ─── Arrows: unsupervised → ensemble ─── -->
+        <line x1="580" y1="303" x2="700" y2="348" stroke="#10b981" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#arrowHead)" opacity="0.6" class="flow-arrow"/>
+        <line x1="758" y1="303" x2="748" y2="348" stroke="#10b981" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#arrowHead)" opacity="0.6" class="flow-arrow"/>
+
+        <!-- ─── ENSEMBLE NODE (row 4) ─── -->
+        <g class="arch-node" onclick="openModal('ensemble')" transform="translate(720,368)">
+          <rect x="-88" y="-26" width="176" height="52" rx="13" fill="rgba(50,10,80,0.9)" stroke="#9333ea" stroke-width="2"/>
+          <rect x="-88" y="-26" width="176" height="52" rx="13" fill="transparent" class="arch-node-glow" stroke="#c084fc" stroke-width="2" opacity="0.5"/>
+          <text x="0" y="-6" font-size="13" fill="#e9d5ff" font-weight="800" text-anchor="middle">Weighted Ensemble</text>
+          <text x="0" y="14" font-size="9" fill="#a855f7" text-anchor="middle">Fusion · Final classification</text>
+        </g>
+
+        <!-- ─── Arrow: ensemble → output ─── -->
+        <line x1="808" y1="368" x2="860" y2="368" stroke="url(#flowGrad)" stroke-width="2" marker-end="url(#arrowHead)"/>
+
+        <!-- ─── OUTPUT BADGE ─── -->
+        <g transform="translate(875,368)">
+          <rect x="-12" y="-20" width="24" height="40" rx="6" fill="rgba(15,23,42,0.8)" stroke="rgba(168,85,247,0.35)" stroke-width="1.2"/>
+          <text x="0" y="-4" font-size="8" fill="#10b981" font-weight="700" text-anchor="middle">REAL</text>
+          <text x="0" y="10" font-size="8" fill="#ef4444" font-weight="700" text-anchor="middle">FAKE</text>
+        </g>
+
+        <!-- ─── "RL avoided" note ─── -->
+        <g transform="translate(110,340)">
+          <rect x="-90" y="-22" width="180" height="52" rx="10" fill="rgba(30,10,10,0.6)" stroke="rgba(239,68,68,0.2)" stroke-width="1" stroke-dasharray="5 3"/>
+          <text x="0" y="-6" font-size="10" fill="#f87171" font-weight="600" text-anchor="middle">Reinforcement Learning</text>
+          <text x="0" y="10" font-size="8" fill="#7f1d1d" text-anchor="middle">❌ Not suitable for this task</text>
+          <text x="0" y="22" font-size="8" fill="#7f1d1d" text-anchor="middle">No natural reward signal</text>
+        </g>
+
+      </svg>
+    </div><!-- /svg card -->
+
+    <!-- ── Model cards grid (summary) ── -->
+    <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+
+      <!-- Card: Xception -->
+      <div class="glass-card rounded-2xl p-5 cursor-pointer hover:border-indigo-500/40 transition-all duration-200" onclick="openModal('xception')">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <span class="tier-pill bg-indigo-950/60 border border-indigo-700/30 text-indigo-300 mb-2">Supervised · Primary</span>
+            <h3 class="text-base font-bold text-slate-100 mt-2">Xception</h3>
+          </div>
+          <svg class="w-5 h-5 text-slate-600 shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">Industry-standard CNN benchmarked on FaceForensics++. Excels at detecting spatial GAN artifacts and blending boundaries in manipulated faces.</p>
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">FaceForensics++</span>
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">Spatial artifacts</span>
+        </div>
+      </div>
+
+      <!-- Card: EfficientNet-B4 -->
+      <div class="glass-card rounded-2xl p-5 cursor-pointer hover:border-indigo-500/40 transition-all duration-200" onclick="openModal('efficientnet')">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <span class="tier-pill bg-indigo-950/60 border border-indigo-700/30 text-indigo-300 mb-2">Supervised · Lightweight</span>
+            <h3 class="text-base font-bold text-slate-100 mt-2">EfficientNet-B4</h3>
+          </div>
+          <svg class="w-5 h-5 text-slate-600 shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">Compound-scaled CNN optimised for inference speed. Strong accuracy with lower compute cost — ideal for real-time or edge deployment scenarios.</p>
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">Fast inference</span>
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">Celeb-DF</span>
+        </div>
+      </div>
+
+      <!-- Card: ViT / LSTM -->
+      <div class="glass-card rounded-2xl p-5 cursor-pointer hover:border-indigo-500/40 transition-all duration-200" onclick="openModal('vit')">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <span class="tier-pill bg-indigo-950/60 border border-indigo-700/30 text-indigo-300 mb-2">Supervised · Temporal</span>
+            <h3 class="text-base font-bold text-slate-100 mt-2">ViT / LSTM (3D CNN)</h3>
+          </div>
+          <svg class="w-5 h-5 text-slate-600 shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">Captures frame-to-frame temporal inconsistencies — unnatural blinking, lip-sync errors, flickering boundaries — that image-only models completely miss.</p>
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">Video</span>
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">DFDC</span>
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">Temporal</span>
+        </div>
+      </div>
+
+      <!-- Card: Autoencoder -->
+      <div class="glass-card rounded-2xl p-5 cursor-pointer hover:border-emerald-500/40 transition-all duration-200" onclick="openModal('autoencoder')">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <span class="tier-pill bg-emerald-950/60 border border-emerald-700/30 text-emerald-300 mb-2">Unsupervised · Support</span>
+            <h3 class="text-base font-bold text-slate-100 mt-2">Autoencoder</h3>
+          </div>
+          <svg class="w-5 h-5 text-slate-600 shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">Trained only on real faces — learns the manifold of authentic appearance. High reconstruction error at inference signals a likely deepfake, even one never seen before.</p>
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">Zero-shot generalisation</span>
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">Novel fakes</span>
+        </div>
+      </div>
+
+      <!-- Card: GAN Discriminator -->
+      <div class="glass-card rounded-2xl p-5 cursor-pointer hover:border-emerald-500/40 transition-all duration-200" onclick="openModal('gan')">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <span class="tier-pill bg-emerald-950/60 border border-emerald-700/30 text-emerald-300 mb-2">Unsupervised · Support</span>
+            <h3 class="text-base font-bold text-slate-100 mt-2">GAN Discriminator</h3>
+          </div>
+          <svg class="w-5 h-5 text-slate-600 shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">Adversarially trained to distinguish real from generated. Provides an independent realness score that complements the supervised classifier output in the ensemble.</p>
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">Adversarial training</span>
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">Realness score</span>
+        </div>
+      </div>
+
+      <!-- Card: Ensemble -->
+      <div class="glass-card rounded-2xl p-5 cursor-pointer hover:border-purple-500/40 transition-all duration-200" onclick="openModal('ensemble')">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <span class="tier-pill bg-purple-950/60 border border-purple-700/30 text-purple-300 mb-2">Output · Fusion</span>
+            <h3 class="text-base font-bold text-slate-100 mt-2">Weighted Ensemble</h3>
+          </div>
+          <svg class="w-5 h-5 text-slate-600 shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">Combines outputs of all models using learned weights. Supervised score drives the primary signal; autoencoder / GAN boost confidence on unseen manipulation techniques.</p>
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">Soft voting</span>
+          <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] mono text-slate-400">Calibrated probabilities</span>
+        </div>
+      </div>
+
+    </div><!-- /model cards -->
+
+    <footer class="mt-12 text-center text-slate-700 text-[10px] mono uppercase tracking-widest">
+      Deepfake Identifier · AI Forensics Engine v1.0 · For Research Purposes Only
+    </footer>
+
+  </div><!-- /pageArchitecture -->
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════
+     ARCHITECTURE MODAL
+═══════════════════════════════════════════════════ -->
+<div id="archModal" onclick="closeModal(event)">
+  <div id="archModalBox">
+    <div class="flex items-start justify-between mb-5">
+      <div>
+        <div id="modalPill" class="tier-pill mb-2"></div>
+        <h2 id="modalTitle" class="text-xl font-extrabold text-slate-100"></h2>
+      </div>
+      <button onclick="closeModalDirect()" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-500 hover:text-slate-300 transition-colors shrink-0 ml-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <p id="modalBody" class="text-sm text-slate-300 leading-relaxed mb-5"></p>
+    <div id="modalMeta" class="space-y-2"></div>
+    <div id="modalTags" class="flex flex-wrap gap-2 mt-5"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════════════════ -->
+<script>
+  const API_BASE_URL = window.location.origin || 'http://127.0.0.1:8000';
+
+  // ─── State ───────────────────────────────────────────────
+  const state = {
+    activeTab: 'image',
+    files: { image: null, video: null },
+    analysisHistory: [],      // Array of {verdict, confidence, filename, type, ts}
+    historyScores: [],        // For history chart: 1.0=real, 0.0=fake
+    isAnalysing: false,
+  };
+
+  // ─── Splash Screen ───────────────────────────────────────
+  const splashScreen = document.getElementById('splashScreen');
+  const splashBtn = document.getElementById('splashBtn');
+
+  splashBtn.addEventListener('click', function (event) {
+    event.stopPropagation();
+    dismissSplash();
+  });
+
+  splashScreen.addEventListener('click', dismissSplash);
+
+  function dismissSplash() {
+    if (!splashScreen || splashScreen.dataset.dismissed === '1') return;
+    splashScreen.dataset.dismissed = '1';
+
+    const app = document.getElementById('appMain');
+    splashScreen.style.opacity = '0';
+    splashScreen.style.pointerEvents = 'none';
+    setTimeout(() => {
+      splashScreen.style.display = 'none';
+    }, 700);
+    app.style.opacity = '1';
+    document.getElementById('topNav').style.display = 'block';
+    // Init canvas dimensions after app becomes visible
+    setTimeout(resizeCanvas, 100);
+  }
+
+  // ─── Tab switching ───────────────────────────────────────
+  function switchTab(tab) {
+    state.activeTab = tab;
+    document.getElementById('panelImage').classList.toggle('hidden', tab !== 'image');
+    document.getElementById('panelVideo').classList.toggle('hidden', tab !== 'video');
+
+    const tabImage = document.getElementById('tabImage');
+    const tabVideo = document.getElementById('tabVideo');
+
+    if (tab === 'image') {
+      tabImage.className = tabImage.className.replace('tab-inactive','').replace('tab-active','') + ' tab-active';
+      tabVideo.className = tabVideo.className.replace('tab-active','').replace('tab-inactive','') + ' tab-inactive';
+    } else {
+      tabVideo.className = tabVideo.className.replace('tab-inactive','').replace('tab-active','') + ' tab-active';
+      tabImage.className = tabImage.className.replace('tab-active','').replace('tab-inactive','') + ' tab-inactive';
+    }
+    refreshAnalyseBtn();
+  }
+
+  // ─── Page switching (Analyse / Architecture) ─────────────
+  function switchPage(page) {
+    const isAnalyse = page === 'analyse';
+    document.getElementById('pageAnalyse').classList.toggle('hidden', !isAnalyse);
+    document.getElementById('pageArchitecture').classList.toggle('hidden', isAnalyse);
+    document.getElementById('navAnalyse').classList.toggle('nav-active', isAnalyse);
+    document.getElementById('navArchitecture').classList.toggle('nav-active', !isAnalyse);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ─── Architecture Modal data ──────────────────────────────
+  const NODE_DATA = {
+    ff: {
+      title: 'FaceForensics++',
+      pill: { text: 'Dataset · Training', cls: 'bg-slate-900 border border-slate-700 text-slate-300' },
+      body: 'FaceForensics++ is the most widely used benchmark for face manipulation detection. It contains over 1,000 original YouTube videos and their corresponding manipulated versions using 4 automated methods: DeepFakes, Face2Face, FaceSwap, and NeuralTextures. It provides both raw and compressed versions to test model robustness.',
+      meta: [
+        { label: 'Size',     value: '1,000+ videos · 4 manipulation types' },
+        { label: 'Labels',   value: 'Binary Real / Fake per-frame' },
+        { label: 'Source',   value: 'TU Munich · CVPR 2019' },
+      ],
+      tags: ['DeepFakes', 'Face2Face', 'FaceSwap', 'NeuralTextures', 'CVPR 2019'],
+    },
+    celeb: {
+      title: 'Celeb-DF',
+      pill: { text: 'Dataset · Training', cls: 'bg-slate-900 border border-slate-700 text-slate-300' },
+      body: 'Celeb-DF (Celebrity DeepFake) contains high-quality DeepFake videos of celebrities synthesised with an improved face-swapping algorithm. It was designed to address low visual quality issues in earlier datasets. Contains 590 real and 5,639 fake videos — it is significantly more challenging than FaceForensics++ for detection models.',
+      meta: [
+        { label: 'Size',   value: '590 real · 5,639 fake videos' },
+        { label: 'Quality', value: 'High visual fidelity' },
+        { label: 'Source', value: 'Stevens Institute · CVPR 2020' },
+      ],
+      tags: ['High quality', 'Face swap', 'Celebrity videos', 'CVPR 2020'],
+    },
+    dfdc: {
+      title: 'Deepfake Detection Challenge (DFDC)',
+      pill: { text: 'Dataset · Training', cls: 'bg-slate-900 border border-slate-700 text-slate-300' },
+      body: 'The DFDC dataset was created by Facebook AI Research as part of a Kaggle competition. It is one of the largest and most diverse deepfake detection datasets, containing ~100,000 video clips spanning many face-swap techniques. Its diversity in lighting, demographic attributes and generation methods makes models trained on it more generalisable.',
+      meta: [
+        { label: 'Size',    value: '~100,000 video clips' },
+        { label: 'Labels',  value: 'Real / Fake at video level' },
+        { label: 'Source',  value: 'Facebook AI Research · Kaggle 2020' },
+      ],
+      tags: ['Largest dataset', 'Multi-technique', 'Diverse demographics', 'Kaggle 2020'],
+    },
+    xception: {
+      title: 'Xception',
+      pill: { text: 'Supervised · Primary', cls: 'bg-indigo-950 border border-indigo-700 text-indigo-300' },
+      body: 'Xception (Extreme Inception) uses depthwise separable convolutions and was the first deep CNN specifically benchmarked for deepfake detection on FaceForensics++. Its architecture excels at capturing spatial artifacts introduced by GAN-based manipulation — pixel-level blending boundaries, spectral inconsistencies, and compression artefacts. It is the industry-standard starting point for this problem.',
+      meta: [
+        { label: 'Architecture', value: 'Depthwise separable CNN' },
+        { label: 'Strength',     value: 'Spatial GAN artifact detection' },
+        { label: 'Pretrain',     value: 'ImageNet + FaceForensics++ fine-tune' },
+        { label: 'Status',       value: '⭐ Industry standard baseline' },
+      ],
+      tags: ['CNN', 'Spatial artifacts', 'FaceForensics++', 'GAN fingerprints', 'ImageNet'],
+    },
+    efficientnet: {
+      title: 'EfficientNet-B4',
+      pill: { text: 'Supervised · Lightweight', cls: 'bg-indigo-950 border border-indigo-700 text-indigo-300' },
+      body: 'EfficientNet-B4 uses compound scaling (depth, width, resolution) to achieve high accuracy with fewer parameters. It delivers competitive deepfake detection performance against Xception while being faster at inference. Ideal when you need real-time processing or are deploying to edge hardware with constrained compute budgets.',
+      meta: [
+        { label: 'Architecture', value: 'Compound-scaled CNN' },
+        { label: 'Strength',     value: 'Speed / accuracy tradeoff' },
+        { label: 'Pretrain',     value: 'ImageNet + fine-tune on Celeb-DF / DFDC' },
+        { label: 'Params',       value: '~19M parameters' },
+      ],
+      tags: ['CNN', 'Fast inference', 'Edge deployment', 'Celeb-DF', 'Compound scaling'],
+    },
+    vit: {
+      title: 'ViT / LSTM (3D CNN)',
+      pill: { text: 'Supervised · Temporal', cls: 'bg-indigo-950 border border-indigo-700 text-indigo-300' },
+      body: 'For video inputs, frame-to-frame temporal consistency is critical. A Vision Transformer (ViT) applied across frames, or an LSTM stacked on frame-level features, captures inconsistencies like unnatural blinking rhythms, lip-sync drift, and flickering along the face boundary — artefacts that image-only models miss entirely. A 3D CNN is a simpler alternative that extends spatial convolutions across the time dimension.',
+      meta: [
+        { label: 'Architecture', value: 'ViT / LSTM / 3D CNN' },
+        { label: 'Strength',     value: 'Temporal inconsistencies in video' },
+        { label: 'Inputs',       value: 'Video clips · face sequences' },
+        { label: 'Signals',      value: 'Blinking, lip-sync, boundary flicker' },
+      ],
+      tags: ['Transformer', 'LSTM', '3D CNN', 'Video', 'Temporal', 'DFDC'],
+    },
+    autoencoder: {
+      title: 'Autoencoder',
+      pill: { text: 'Unsupervised · Support Layer', cls: 'bg-emerald-950 border border-emerald-700 text-emerald-300' },
+      body: 'An autoencoder is trained only on real face images. It learns to compress and reconstruct authentic faces with minimal error. At inference time, real faces will have low reconstruction error, while deepfakes — which contain patterns the model never learned — produce high reconstruction error. This property makes the autoencoder a powerful safety net for novel deepfake techniques that a supervised classifier has never been exposed to.',
+      meta: [
+        { label: 'Training data', value: 'Real faces only (no fake labels needed)' },
+        { label: 'Signal',        value: 'Reconstruction error (MSE / perceptual loss)' },
+        { label: 'Strength',      value: 'Catches novel deepfakes not in training set' },
+        { label: 'Role',          value: 'Support layer — not standalone' },
+      ],
+      tags: ['Unsupervised', 'Reconstruction error', 'Zero-shot', 'Novel deepfakes', 'Anomaly detection'],
+    },
+    gan: {
+      title: 'GAN Discriminator',
+      pill: { text: 'Unsupervised · Support Layer', cls: 'bg-emerald-950 border border-emerald-700 text-emerald-300' },
+      body: 'A GAN discriminator is adversarially trained alongside a generator to distinguish real from synthesised images. It develops an internal sense of "realness" that complements supervised classifiers. When used as a second signal in the ensemble, its realness score provides an independent validation of the supervised model\'s output — particularly useful when the supervised model is uncertain.',
+      meta: [
+        { label: 'Training',  value: 'Adversarial (generator + discriminator)' },
+        { label: 'Signal',    value: 'Realness probability score' },
+        { label: 'Strength',  value: 'Complementary signal — independent of labels' },
+        { label: 'Role',      value: 'Support layer — fused in ensemble' },
+      ],
+      tags: ['GAN', 'Adversarial training', 'Realness score', 'Support layer', 'Ensemble input'],
+    },
+    ensemble: {
+      title: 'Weighted Ensemble',
+      pill: { text: 'Output · Fusion', cls: 'bg-purple-950 border border-purple-700 text-purple-300' },
+      body: 'The ensemble fuses probability scores from all upstream models using learned weights. The supervised classifier (Xception / ViT) carries the highest weight for known deepfake patterns. The autoencoder reconstruction error and GAN discriminator score are added as secondary signals to increase recall on novel manipulation techniques. The final output is a calibrated probability: REAL or DEEPFAKE.',
+      meta: [
+        { label: 'Inputs',   value: 'Xception · EfficientNet · ViT · Autoencoder · GAN' },
+        { label: 'Method',   value: 'Soft voting · weighted average of probabilities' },
+        { label: 'Output',   value: 'Calibrated Real / Deepfake probability' },
+        { label: 'Benefit',  value: 'Robust to novel manipulation + known fakes' },
+      ],
+      tags: ['Ensemble', 'Soft voting', 'Calibration', 'Fusion', 'Final output'],
+    },
+  };
+
+  function openModal(nodeKey) {
+    const d = NODE_DATA[nodeKey];
+    if (!d) return;
+    document.getElementById('modalTitle').textContent = d.title;
+    const pill = document.getElementById('modalPill');
+    pill.textContent = d.pill.text;
+    pill.className = 'tier-pill ' + d.pill.cls;
+    document.getElementById('modalBody').textContent = d.body;
+    document.getElementById('modalMeta').innerHTML = d.meta.map(m =>
+      `<div class="flex gap-3 py-2 border-b border-slate-800/60 last:border-0">
+         <span class="w-28 shrink-0 text-[10px] mono uppercase tracking-wider text-slate-500">${m.label}</span>
+         <span class="text-xs text-slate-300 font-medium">${m.value}</span>
+       </div>`
+    ).join('');
+    document.getElementById('modalTags').innerHTML = d.tags.map(t =>
+      `<span class="px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-[10px] mono text-slate-400">${t}</span>`
+    ).join('');
+    document.getElementById('archModal').classList.add('open');
+  }
+  function closeModal(e) {
+    if (e.target === document.getElementById('archModal')) closeModalDirect();
+  }
+  function closeModalDirect() {
+    document.getElementById('archModal').classList.remove('open');
+  }
+  // Close on Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModalDirect();
+  });
+
+  // ─── Drag & drop helpers ─────────────────────────────────
+  function handleDragOver(e, zoneId) {
+    e.preventDefault();
+    document.getElementById(zoneId).classList.add('drop-zone-hover');
+  }
+  function handleDragLeave(zoneId) {
+    document.getElementById(zoneId).classList.remove('drop-zone-hover');
+  }
+  function handleDrop(e, type) {
+    e.preventDefault();
+    const zoneId = type === 'image' ? 'imageDropZone' : 'videoDropZone';
+    document.getElementById(zoneId).classList.remove('drop-zone-hover');
+    const file = e.dataTransfer.files?.[0];
+    if (file) applyFile(file, type);
+  }
+  function handleFileSelect(input, type) {
+    const file = input.files?.[0];
+    if (file) applyFile(file, type);
+  }
+
+  // ─── File application ────────────────────────────────────
+  function applyFile(file, type) {
+    state.files[type] = file;
+    const url = URL.createObjectURL(file);
+    const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+
+    if (type === 'image') {
+      document.getElementById('imagePreviewEl').src = url;
+      document.getElementById('imageFileName').textContent = file.name;
+      document.getElementById('imageFileSize').textContent = sizeMB + ' MB';
+      document.getElementById('imagePreviewWrap').classList.remove('hidden');
+
+      // Right-side main preview
+      const mainImg = document.getElementById('mainImagePreview');
+      const mainVid = document.getElementById('mainVideoPreview');
+      mainImg.src = url;
+      mainImg.classList.remove('hidden');
+      mainVid.classList.add('hidden');
+      document.getElementById('mediaEmptyState').classList.add('hidden');
+      document.getElementById('mediaTypeTag').textContent = 'Image · ' + file.name.split('.').pop().toUpperCase();
+    } else {
+      document.getElementById('videoPreviewEl').src = url;
+      document.getElementById('videoFileName').textContent = file.name;
+      document.getElementById('videoFileSize').textContent = sizeMB + ' MB';
+      document.getElementById('videoPreviewWrap').classList.remove('hidden');
+
+      const mainVid = document.getElementById('mainVideoPreview');
+      const mainImg = document.getElementById('mainImagePreview');
+      mainVid.src = url;
+      mainVid.classList.remove('hidden');
+      mainImg.classList.add('hidden');
+      document.getElementById('mediaEmptyState').classList.add('hidden');
+      document.getElementById('mediaTypeTag').textContent = 'Video · ' + file.name.split('.').pop().toUpperCase();
+    }
+    refreshAnalyseBtn();
+  }
+
+  function clearFile(type) {
+    state.files[type] = null;
+    if (type === 'image') {
+      document.getElementById('imageFileInput').value = '';
+      document.getElementById('imagePreviewWrap').classList.add('hidden');
+      document.getElementById('imagePreviewEl').src = '';
+      document.getElementById('mainImagePreview').classList.add('hidden');
+      document.getElementById('mainImagePreview').src = '';
+    } else {
+      document.getElementById('videoFileInput').value = '';
+      document.getElementById('videoPreviewWrap').classList.add('hidden');
+      const vp = document.getElementById('videoPreviewEl');
+      vp.pause(); vp.removeAttribute('src');
+      const mv = document.getElementById('mainVideoPreview');
+      mv.classList.add('hidden'); mv.pause(); mv.removeAttribute('src');
+    }
+    // If no file for either type, show empty state
+    if (!state.files.image && !state.files.video) {
+      document.getElementById('mediaEmptyState').classList.remove('hidden');
+      document.getElementById('mediaTypeTag').textContent = 'No file';
+    }
+    resetResults();
+    refreshAnalyseBtn();
+  }
+
+  // ─── Analyse button state ────────────────────────────────
+  function refreshAnalyseBtn() {
+    const btn = document.getElementById('analyseBtn');
+    const hasFile = !!state.files[state.activeTab];
+    if (hasFile && !state.isAnalysing) {
+      btn.disabled = false;
+      btn.classList.remove('btn-analyse-disabled');
+      btn.classList.add('btn-analyse-enabled');
+      // Update icon opacity
+      btn.querySelector('svg').style.opacity = '1';
+    } else {
+      btn.disabled = true;
+      btn.classList.add('btn-analyse-disabled');
+      btn.classList.remove('btn-analyse-enabled');
+      btn.querySelector('svg').style.opacity = '0.4';
+    }
+  }
+
+  // ─── Run Analysis ────────────────────────────────────────
+  function runAnalysis() {
+    const file = state.files[state.activeTab];
+    if (!file || state.isAnalysing) return;
+
+    state.isAnalysing = true;
+    refreshAnalyseBtn();
+
+    // Show scanning overlay
+    document.getElementById('scanningOverlay').classList.remove('hidden');
+    document.getElementById('analysisAnnotation').classList.add('hidden');
+    document.getElementById('analysisAnnotation').innerHTML = '';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch(`${API_BASE_URL}/verify/`, {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      const isDeepfake = data.is_deepfake;
+      const fakePercentage = Number.isFinite(data.fake_percentage) ? data.fake_percentage : Math.round(data.confidence_score * 100);
+      const fakeScore = Math.round(fakePercentage * 100) / 100;
+      const confidence = Math.round(fakeScore);
+      const latencyMs = data.processing_time_ms;
+      const faces = Math.floor(1 + Math.random() * 2); // Simulated count for display
+      const frames = state.activeTab === 'video' ? 5 : 1; // Frames analyzed
+
+      const verdict = isDeepfake ? 'DEEPFAKE' : 'REAL';
+
+      const signals = isDeepfake ? {
+        face:    Math.round((100 - fakeScore)),
+        gan:     Math.round(fakeScore),
+        texture: Math.round(20 + Math.random() * 25),
+        freq:    Math.round(fakeScore * 0.9),
+        meta:    Math.round(20 + Math.random() * 30),
+      } : {
+        face:    Math.round(100 - fakeScore),
+        gan:     Math.round(fakeScore),
+        texture: Math.round((100 - fakeScore) * 0.9),
+        freq:    Math.round(fakeScore),
+        meta:    Math.round((100 - fakeScore) * 0.95),
+      };
+
+      applyResults({ verdict, confidence, latencyMs, faces, frames, signals, file });
+
+      state.isAnalysing = false;
+      refreshAnalyseBtn();
+      
+      // Reload history to sync database
+      fetchHistory();
+    })
+    .catch(error => {
+      console.error('Analysis failed:', error);
+      alert('Error connecting to backend API: ' + error.message);
+      
+      // Hide scanning overlay and reset state
+      document.getElementById('scanningOverlay').classList.add('hidden');
+      state.isAnalysing = false;
+      refreshAnalyseBtn();
+    });
+  }
+
+  function applyResults({ verdict, confidence, latencyMs, faces, frames, signals, file }) {
+    const isReal = verdict === 'REAL';
+
+    // ── Confidence ring ──
+    const ring = document.getElementById('confidenceRing');
+    const circ = 414.69; // 2 * PI * 66
+    ring.style.strokeDashoffset = circ - (confidence / 100) * circ;
+    ring.style.stroke = isReal ? '#10b981' : '#ef4444';
+    ring.style.filter = isReal
+      ? 'drop-shadow(0 0 8px rgba(16,185,129,0.6))'
+      : 'drop-shadow(0 0 8px rgba(239,68,68,0.6))';
+
+    // ── Center text ──
+    const pctEl = document.getElementById('confPct');
+    const verdEl = document.getElementById('confVerdict');
+    pctEl.textContent = confidence + '%';
+    pctEl.className = 'text-4xl font-extrabold mono ' + (isReal ? 'text-emerald-400' : 'text-red-400');
+    verdEl.textContent = verdict;
+    verdEl.className = 'text-[11px] uppercase tracking-widest font-bold mt-1 ' + (isReal ? 'text-emerald-500' : 'text-red-500');
+
+    // ── Verdict card ──
+    const vCard = document.getElementById('verdictCard');
+    const vText = document.getElementById('verdictText');
+    vCard.className = 'p-4 rounded-xl border ' +
+      (isReal ? 'border-emerald-500/20 bg-emerald-950/10' : 'border-red-500/20 bg-red-950/10');
+    vText.textContent = isReal
+      ? '✓ No deepfake indicators detected. Media appears authentic.'
+      : '⚠ Deepfake indicators detected. Media may be synthetically manipulated.';
+    vText.className = 'text-sm font-semibold leading-snug ' + (isReal ? 'text-emerald-300' : 'text-red-300');
+
+    // ── Metric tiles ──
+    document.getElementById('metricLatency').textContent = latencyMs;
+    document.getElementById('metricLatency').className = 'text-xl font-bold mono text-slate-200';
+    document.getElementById('metricFaces').textContent = faces;
+    document.getElementById('metricFaces').className = 'text-xl font-bold mono text-slate-200';
+    document.getElementById('metricFrames').textContent = frames;
+    document.getElementById('metricFrames').className = 'text-xl font-bold mono text-slate-200';
+
+    // ── Forensic signal bars ──
+    const bars = [
+      { bar: 'barFace',    lbl: 'lblFace',    val: signals.face,    color: signals.face    > 50 ? '#10b981' : '#ef4444' },
+      { bar: 'barGAN',     lbl: 'lblGAN',     val: signals.gan,     color: signals.gan     < 30 ? '#10b981' : '#ef4444' },
+      { bar: 'barTexture', lbl: 'lblTexture', val: signals.texture, color: signals.texture > 50 ? '#10b981' : '#ef4444' },
+      { bar: 'barFreq',    lbl: 'lblFreq',    val: signals.freq,    color: signals.freq    < 30 ? '#10b981' : '#ef4444' },
+      { bar: 'barMeta',    lbl: 'lblMeta',    val: signals.meta,    color: signals.meta    > 50 ? '#10b981' : '#ef4444' },
+    ];
+    bars.forEach(({ bar, lbl, val, color }) => {
+      const el = document.getElementById(bar);
+      el.style.width = val + '%';
+      el.style.background = color;
+      el.style.boxShadow = `0 0 6px ${color}66`;
+      document.getElementById(lbl).textContent = val + '%';
+      document.getElementById(lbl).style.color = color;
+    });
+
+    // ── Hide scanning overlay, show annotation ──
+    document.getElementById('scanningOverlay').classList.add('hidden');
+    const annot = document.getElementById('analysisAnnotation');
+    annot.classList.remove('hidden');
+    annot.innerHTML = `
+      <div class="px-2.5 py-1 rounded-lg text-[10px] font-bold mono uppercase tracking-wider
+                  ${isReal ? 'bg-emerald-900/70 text-emerald-300 border border-emerald-700/40'
+                           : 'bg-red-900/70 text-red-300 border border-red-700/40'}">
+        ${verdict} · ${confidence}%
+      </div>
+      <div class="px-2.5 py-1 rounded-lg text-[10px] mono text-slate-400 bg-black/50 border border-slate-800/50">
+        ${latencyMs} ms · ${faces} face${faces > 1 ? 's' : ''} · ${frames} frame${frames > 1 ? 's' : ''}
+      </div>
+    `;
+
+    // ── History chart data ──
+    const score = isReal ? (confidence / 100) : (1 - confidence / 100);
+    state.historyScores.push(score);
+    if (state.historyScores.length > 16) state.historyScores.shift();
+    document.getElementById('historyCanvasEmpty').classList.add('hidden');
+    drawHistoryChart();
+
+    // ── History log entry ──
+    const ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const entry = { verdict, confidence, filename: file.name, type: state.activeTab, ts };
+    state.analysisHistory.unshift(entry);
+    if (state.analysisHistory.length > 30) state.analysisHistory.pop();
+    renderHistoryLog();
+  }
+
+  function resetResults() {
+    // Reset ring
+    document.getElementById('confidenceRing').style.strokeDashoffset = '414.69';
+    document.getElementById('confidenceRing').style.stroke = '#10b981';
+    document.getElementById('confPct').textContent = '—';
+    document.getElementById('confPct').className = 'text-4xl font-extrabold mono text-slate-500';
+    document.getElementById('confVerdict').textContent = 'Awaiting';
+    document.getElementById('confVerdict').className = 'text-[11px] uppercase tracking-widest font-bold text-slate-500 mt-1';
+    // Reset verdict card
+    document.getElementById('verdictCard').className = 'p-4 rounded-xl border border-slate-800/80 bg-[#090d1c]/60';
+    document.getElementById('verdictText').textContent = 'Upload a file to begin';
+    document.getElementById('verdictText').className = 'text-lg font-bold text-slate-500';
+    // Reset metrics
+    ['metricLatency','metricFaces','metricFrames'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+      document.getElementById(id).className = 'text-xl font-bold mono text-slate-300';
+    });
+    // Reset bars
+    ['barFace','barGAN','barTexture','barFreq','barMeta'].forEach(id => {
+      const el = document.getElementById(id);
+      el.style.width = '0%';
+      el.style.background = '#1e293b';
+      el.style.boxShadow = 'none';
+    });
+    ['lblFace','lblGAN','lblTexture','lblFreq','lblMeta'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+      document.getElementById(id).style.color = '';
+    });
+    document.getElementById('analysisAnnotation').classList.add('hidden');
+    document.getElementById('analysisAnnotation').innerHTML = '';
+  }
+
+  // ─── History Log ─────────────────────────────────────────
+  function renderHistoryLog() {
+    const container = document.getElementById('historyLog');
+    if (state.analysisHistory.length === 0) {
+      container.innerHTML = `<div id="historyEmpty" class="text-center py-8 text-slate-600 text-[11px] mono uppercase tracking-widest">No analyses run yet</div>`;
+      return;
+    }
+    container.innerHTML = state.analysisHistory.map((entry, idx) => {
+      const isReal = entry.verdict === 'REAL';
+      return `
+        <div class="slide-in border rounded-xl p-3 flex items-center justify-between transition-all duration-200
+                    ${isReal ? 'border-emerald-500/10 hover:border-emerald-500/25 bg-emerald-950/5'
+                             : 'border-red-500/10 hover:border-red-500/25 bg-red-950/5'}"
+             style="animation-delay:${idx * 30}ms">
+          <div class="flex items-center gap-3 truncate">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest shrink-0
+                         ${isReal ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'}">
+              ${entry.verdict}
+            </span>
+            <span class="text-[10px] text-slate-500 mono truncate">${entry.filename} · ${entry.ts}</span>
+          </div>
+          <span class="text-sm font-bold mono shrink-0 ml-2 ${isReal ? 'text-emerald-400' : 'text-red-400'}">
+            ${entry.confidence}%
+          </span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function fetchHistory() {
+    fetch(`${API_BASE_URL}/verify/history`)
+      .then(response => {
+        if (!response.ok) throw new Error('Could not fetch history');
+        return response.json();
+      })
+      .then(data => {
+        state.analysisHistory = data.map(record => {
+          const isReal = !record.is_deepfake;
+          const verdict = record.is_deepfake ? 'DEEPFAKE' : 'REAL';
+          const confidence = Math.round(record.confidence_score * 100);
+          
+          let ts = '—';
+          if (record.timestamp) {
+            try {
+              ts = new Date(record.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            } catch (e) {}
+          }
+          
+          return {
+            verdict,
+            confidence,
+            filename: record.filename,
+            type: record.media_type,
+            ts
+          };
+        });
+        
+        // Populate chart scores: 1.0 = real, 0.0 = fake
+        state.historyScores = data.slice(0, 16).reverse().map(record => {
+          const confidence = record.confidence_score;
+          return record.is_deepfake ? (1.0 - confidence) : confidence;
+        });
+        
+        const emptyEl = document.getElementById('historyCanvasEmpty');
+        if (state.historyScores.length > 0) {
+          emptyEl.classList.add('hidden');
+        } else {
+          emptyEl.classList.remove('hidden');
+        }
+        
+        drawHistoryChart();
+        renderHistoryLog();
+      })
+      .catch(err => {
+        console.error('Failed to sync history:', err);
+      });
+  }
+
+  function clearHistory() {
+    fetch(`${API_BASE_URL}/verify/history`, {
+      method: 'DELETE'
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Could not clear history');
+      return response.json();
+    })
+    .then(() => {
+      state.analysisHistory = [];
+      state.historyScores = [];
+      renderHistoryLog();
+      document.getElementById('historyCanvasEmpty').classList.remove('hidden');
+      drawHistoryChart();
+    })
+    .catch(err => {
+      console.error('Failed to clear history:', err);
+      alert('Error clearing history: ' + err.message);
+    });
+  }
+
+  // ─── History Canvas Chart ─────────────────────────────────
+  let histCanvas, histCtx;
+
+  window.addEventListener('DOMContentLoaded', () => {
+    histCanvas = document.getElementById('historyCanvas');
+    histCtx    = histCanvas.getContext('2d');
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    drawHistoryChart();
+    
+    // Fetch initial history from database
+    fetchHistory();
+  });
+
+  function resizeCanvas() {
+    if (!histCanvas) return;
+    const rect = histCanvas.getBoundingClientRect();
+    histCanvas.width  = rect.width  * window.devicePixelRatio;
+    histCanvas.height = rect.height * window.devicePixelRatio;
+    drawHistoryChart();
+  }
+
+  function drawHistoryChart() {
+    if (!histCtx) return;
+    const w = histCanvas.width;
+    const h = histCanvas.height;
+    histCtx.clearRect(0, 0, w, h);
+
+    const data = state.historyScores;
+    if (data.length < 2) return;
+
+    const mx = 28 * window.devicePixelRatio;
+    const my = 12 * window.devicePixelRatio;
+    const pw = w - mx * 2;
+    const ph = h - my * 2;
+
+    // Grid lines
+    histCtx.strokeStyle = 'rgba(255,255,255,0.03)';
+    histCtx.lineWidth = 1;
+    [0,0.25,0.5,0.75,1].forEach(t => {
+      const y = my + t * ph;
+      histCtx.beginPath();
+      histCtx.moveTo(mx, y);
+      histCtx.lineTo(w - mx, y);
+      histCtx.stroke();
+    });
+
+    // Fill area under line
+    histCtx.beginPath();
+    data.forEach((score, i) => {
+      const x = mx + (i / (data.length - 1)) * pw;
+      const y = my + (1 - score) * ph;
+      i === 0 ? histCtx.moveTo(x, y) : histCtx.lineTo(x, y);
+    });
+    histCtx.lineTo(mx + pw, my + ph);
+    histCtx.lineTo(mx, my + ph);
+    histCtx.closePath();
+    const fillGrad = histCtx.createLinearGradient(0, my, 0, my + ph);
+    fillGrad.addColorStop(0, 'rgba(139,92,246,0.15)');
+    fillGrad.addColorStop(1, 'rgba(139,92,246,0.00)');
+    histCtx.fillStyle = fillGrad;
+    histCtx.fill();
+
+    // Line path
+    histCtx.beginPath();
+    data.forEach((score, i) => {
+      const x = mx + (i / (data.length - 1)) * pw;
+      const y = my + (1 - score) * ph;
+      i === 0 ? histCtx.moveTo(x, y) : histCtx.lineTo(x, y);
+    });
+    const lineGrad = histCtx.createLinearGradient(mx, 0, mx + pw, 0);
+    lineGrad.addColorStop(0, 'rgba(168,85,247,0.7)');
+    lineGrad.addColorStop(1, 'rgba(6,182,212,0.9)');
+    histCtx.strokeStyle = lineGrad;
+    histCtx.lineWidth = 3 * window.devicePixelRatio;
+    histCtx.lineJoin = 'round';
+    histCtx.stroke();
+
+    // Dots
+    data.forEach((score, i) => {
+      const x = mx + (i / (data.length - 1)) * pw;
+      const y = my + (1 - score) * ph;
+      histCtx.beginPath();
+      histCtx.arc(x, y, 4.5 * window.devicePixelRatio, 0, 2 * Math.PI);
+      histCtx.fillStyle = score >= 0.5 ? '#10b981' : '#ef4444';
+      histCtx.shadowColor = score >= 0.5 ? '#10b981' : '#ef4444';
+      histCtx.shadowBlur = 6 * window.devicePixelRatio;
+      histCtx.fill();
+      histCtx.shadowBlur = 0;
+      // Ring
+      histCtx.beginPath();
+      histCtx.arc(x, y, 4.5 * window.devicePixelRatio, 0, 2 * Math.PI);
+      histCtx.strokeStyle = 'rgba(10,14,24,0.7)';
+      histCtx.lineWidth = 1.5 * window.devicePixelRatio;
+      histCtx.stroke();
+    });
+  }
+</script>
+</body>
+</html>

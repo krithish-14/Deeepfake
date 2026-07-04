@@ -1,0 +1,12 @@
+.venv/
+ml/weights/
+api/uploads/
+*.pyc
+__pycache__/
+.env
+.env.*
+.vscode/
+.DS_Store
+*.pth
+*.pt
+weights/
