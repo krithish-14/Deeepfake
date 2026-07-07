@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: deepfake-backend
+    env: docker
+    region: oregon
+    branch: main
+    dockerfilePath: api/Dockerfile
+    plan: free
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        value: "${DJANGO_SECRET_KEY}"
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        value: "${DATABASE_URL}"
+      - key: VERCEL_BLOB_ENDPOINT
+        value: "${VERCEL_BLOB_ENDPOINT}"
+      - key: VERCEL_BLOB_BUCKET
+        value: "${VERCEL_BLOB_BUCKET}"
+      - key: VERCEL_BLOB_BASE_URL
+        value: "${VERCEL_BLOB_BASE_URL}"
+      - key: REDIS_URL
+        value: "${REDIS_URL}"

@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./api/.env
+    volumes:
+      - ./api:/app
+      - ./uploads:/app/uploads
+    command: sh -c "python manage.py migrate --noinput && gunicorn api.wsgi:application --bind 0.0.0.0:8000 --workers 2"
+    restart: unless-stopped
+
+# Optional Postgres service (uncomment and update DATABASE_URL in api/.env to use)
+#  db:
+#    image: postgres:15
+#    environment:
+#      POSTGRES_DB: deepfake
+#      POSTGRES_USER: deepfake
+#      POSTGRES_PASSWORD: changeme
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+#
+#volumes:
+#  postgres_data:

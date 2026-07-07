@@ -988,7 +988,16 @@
      SCRIPTS
 ═══════════════════════════════════════════════════ -->
 <script>
-  const API_BASE_URL = window.location.origin || 'http://127.0.0.1:8000';
+  // Resolve API base URL at runtime. If `/config.json` exists it overrides the default.
+  let API_BASE_URL = window.location.origin || 'http://127.0.0.1:8000';
+  try {
+    fetch('/config.json')
+      .then(r => r.ok ? r.json() : null)
+      .then(cfg => {
+        if (cfg && cfg.API_BASE_URL) API_BASE_URL = cfg.API_BASE_URL;
+      })
+      .catch(() => {});
+  } catch (e) {}
 
   // ─── State ───────────────────────────────────────────────
   const state = {
