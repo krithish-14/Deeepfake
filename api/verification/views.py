@@ -22,11 +22,14 @@ except ImportError:  # pragma: no cover - runtime fallback
     cv2 = None
 
 try:
+    import logging
     from PIL import Image
 except ImportError:  # pragma: no cover - runtime fallback
     Image = None
 
 try:
+
+    logger = logging.getLogger(__name__)
     import requests
 except Exception:
     requests = None
@@ -119,6 +122,47 @@ def verify_media(request):
 
     media_type = 'video' if extension.lower() in ['.mp4', '.avi', '.mov', '.webm'] else 'image'
 
+    # Basic validation: ensure uploaded file is a valid image or video so we
+    # return 400 (client error) instead of letting inference raise a 500.
+    try:
+        logger.info("Received uploaded file %s, detected media_type=%s", uploaded_file.name, media_type)
+        if media_type == 'image':
+            try:
+                pil_test = Image.open(file_path)
+                pil_test.verify()
+            except Exception as e:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                logger.warning("Invalid image upload saved at %s: %s", file_path, e)
+                return JsonResponse({'detail': 'Uploaded file is not a valid image'}, status=400)
+
+        else:  # video
+            if cv2 is None:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                logger.warning("Received video upload but OpenCV not installed: %s", file_path)
+                return JsonResponse({'detail': 'Video processing not available on server'}, status=400)
+            cap_test = cv2.VideoCapture(file_path)
+            if not cap_test.isOpened():
+                cap_test.release()
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                logger.warning("Uploaded video could not be opened: %s", file_path)
+                return JsonResponse({'detail': 'Uploaded file is not a valid video'}, status=400)
+            ret, frame = cap_test.read()
+            cap_test.release()
+            if not ret:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                logger.warning("Uploaded video has no readable frames: %s", file_path)
+                return JsonResponse({'detail': 'Uploaded video contains no readable frames'}, status=400)
+    except Exception:
+        # Any unexpected validation error should not leak internals.
+        logger.exception("Unexpected error during upload validation for %s", file_path)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        return JsonResponse({'detail': 'Invalid upload'}, status=400)
+
     if Image is None:
         return JsonResponse({'detail': 'Pillow is not installed'}, status=500)
     if cv2 is None and media_type == 'video':
@@ -126,6 +170,7 @@ def verify_media(request):
 
     try:
         model_source = 'unknown'
+        logger.info("Starting model inference for %s (media_type=%s)", file_path, media_type)
         fake_probability = 0.0
         real_probability = 1.0
 
@@ -183,9 +228,10 @@ def verify_media(request):
         real_percentage = round(real_probability * 100, 2)
 
     except Exception as exc:
+        logger.exception("Model inference failed for %s", file_path)
         if os.path.exists(file_path):
             os.remove(file_path)
-        return JsonResponse({'detail': f'Model inference failed: {exc}'}, status=500)
+        return JsonResponse({'detail': f'Model inference failed: {str(exc)}'}, status=500)
 
     processing_time_ms = int((time.time() - start_time) * 1000)
 
