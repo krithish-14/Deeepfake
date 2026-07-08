@@ -5,7 +5,6 @@ import time
 import uuid
 from django.conf import settings
 from django.http import JsonResponse, HttpResponse
-from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from .models import VerificationRecord
 
@@ -139,11 +138,15 @@ def verify_media(request):
             is_deepfake = fake_probability >= 0.5
             confidence_score = fake_probability
         else:
-            cap = cv2.VideoCapture(file_path)
+            if cv2 is None:
+                raise ValueError('opencv-python-headless is not installed')
+
+            cv2_module = cv2
+            cap = cv2_module.VideoCapture(file_path)
             if not cap.isOpened():
                 raise ValueError('Could not open video file')
 
-            frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            frame_count = int(cap.get(cv2_module.CAP_PROP_FRAME_COUNT))
             if frame_count <= 0:
                 raise ValueError('Empty video file')
 
@@ -156,12 +159,12 @@ def verify_media(request):
                 frame_idx = i * step
                 if frame_idx >= frame_count:
                     break
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+                cap.set(cv2_module.CAP_PROP_POS_FRAMES, frame_idx)
                 ret, frame = cap.read()
                 if not ret:
                     break
 
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame_rgb = cv2_module.cvtColor(frame, cv2_module.COLOR_BGR2RGB)
                 pil_img = Image.fromarray(frame_rgb)
                 result = predict_image(pil_img)
                 fake_scores.append(float(result['fake_probability']))
@@ -196,7 +199,7 @@ def verify_media(request):
     )
 
     return JsonResponse({
-        'id': record.id,
+        'id': record.pk,
         'filename': record.filename,
         'media_type': record.media_type,
         'is_deepfake': record.is_deepfake,
@@ -217,7 +220,7 @@ def verification_history(request):
     limit = int(request.GET.get('limit', 50))
     records = VerificationRecord.objects.order_by('-timestamp')[:limit]
     data = [{
-        'id': record.id,
+        'id': record.pk,
         'filename': record.filename,
         'file_path': record.file_path,
         'media_type': record.media_type,
