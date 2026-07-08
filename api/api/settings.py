@@ -6,7 +6,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-deepfake-secret-key')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ['1', 'true', 'yes']
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+DEFAULT_ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'deeepfake.onrender.com']
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get('DJANGO_ALLOWED_HOSTS', ','.join(DEFAULT_ALLOWED_HOSTS)).split(',') if host.strip()]
 
 
 class CorsMiddleware:

@@ -9,6 +9,14 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from .models import VerificationRecord
 
+
+def cors_options_response():
+    response = HttpResponse(status=200)
+    response['Access-Control-Allow-Origin'] = '*'
+    response['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, OPTIONS'
+    response['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+    return response
+
 try:
     import cv2
 except ImportError:  # pragma: no cover - runtime fallback
@@ -88,8 +96,11 @@ def serve_frontend(request):
 
 
 @csrf_exempt
-@require_http_methods(['POST'])
 def verify_media(request):
+    if request.method == 'OPTIONS':
+        return cors_options_response()
+    if request.method != 'POST':
+        return JsonResponse({'detail': 'Method not allowed'}, status=405)
     start_time = time.time()
 
     if 'file' not in request.FILES:
@@ -198,8 +209,11 @@ def verify_media(request):
     })
 
 
-@require_http_methods(['GET'])
 def verification_history(request):
+    if request.method == 'OPTIONS':
+        return cors_options_response()
+    if request.method != 'GET':
+        return JsonResponse({'detail': 'Method not allowed'}, status=405)
     limit = int(request.GET.get('limit', 50))
     records = VerificationRecord.objects.order_by('-timestamp')[:limit]
     data = [{
@@ -218,8 +232,11 @@ def verification_history(request):
 
 
 @csrf_exempt
-@require_http_methods(['DELETE'])
 def clear_verification_history(request):
+    if request.method == 'OPTIONS':
+        return cors_options_response()
+    if request.method != 'DELETE':
+        return JsonResponse({'detail': 'Method not allowed'}, status=405)
     try:
         VerificationRecord.objects.all().delete()
         return JsonResponse({'status': 'success', 'message': 'All verification history cleared'})
