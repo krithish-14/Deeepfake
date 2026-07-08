@@ -15,4 +15,4 @@ ENV DJANGO_SETTINGS_MODULE=api.settings
 
 RUN python manage.py collectstatic --noinput || true
 
-CMD ["sh", "-c", "gunicorn api.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput || true && gunicorn api.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2"]
