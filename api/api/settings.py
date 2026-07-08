@@ -110,3 +110,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
+
+# Where `collectstatic` will copy static files to. Required for collectstatic
+# during Docker builds and at startup (used by Render). Ensure this points to
+# a filesystem path writable by the container.
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
