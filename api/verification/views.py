@@ -487,6 +487,7 @@ def verify_media(request):
             real_probability = float(result['real_probability'])
             model_source = result.get('model_source', 'unknown')
             artifact_score = result.get('artifact_score', 0.0)
+            artifact_evidence = result.get('artifact_evidence', 0.0)
             artifact_components = result.get('artifact_components', {})
             is_deepfake = fake_probability >= 0.5
             confidence_score = fake_probability
