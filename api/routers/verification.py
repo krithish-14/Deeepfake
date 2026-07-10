@@ -25,8 +25,9 @@ def get_pipeline():
     global _pipeline
     if _pipeline is None:
         try:
-            # Load classification pipeline using SigLIP model
-            _pipeline = pipeline("image-classification", model="prithivMLmods/deepfake-detector-model-v1")
+            # Load classification pipeline using reliable deepfake detection model
+            # Model: dima806/deepfake_vs_real_image_detection is fine-tuned on FF++
+            _pipeline = pipeline("image-classification", model="dima806/deepfake_vs_real_image_detection")
         except Exception as e:
             # Log error
             print(f"Error loading model: {str(e)}")
@@ -58,20 +59,37 @@ async def verify_media(file: UploadFile = File(...), db: Session = Depends(get_d
             # Open image using PIL
             pil_img = Image.open(file_path).convert("RGB")
             results = pipe(pil_img)
+            print("Model results (image):", results)  # debug log
             
             top_pred = results[0]
             label = top_pred['label'].lower()
             score = float(top_pred['score'])
             
             is_deepfake = False
-            if 'fake' in label or 'label_0' in label:
+            # Check labels for dima806/deepfake_vs_real_image_detection (labels are usually "real" and "fake")
+            # Also handle other common label formats
+            if 'fake' in label or '0' in label or label == 'deepfake':
                 is_deepfake = True
-            elif 'real' in label or 'label_1' in label:
+            elif 'real' in label or '1' in label or label == 'authentic':
                 is_deepfake = False
             else:
                 is_deepfake = 'fake' in label
                 
-            confidence_score = score
+            # For models that output both classes, find the fake score
+            fake_score = None
+            real_score = None
+            for pred in results:
+                pred_label = pred['label'].lower()
+                if 'fake' in pred_label or '0' in pred_label:
+                    fake_score = float(pred['score'])
+                if 'real' in pred_label or '1' in pred_label:
+                    real_score = float(pred['score'])
+            
+            if fake_score is not None and real_score is not None:
+                confidence_score = fake_score if is_deepfake else real_score
+            else:
+                # If only top result available
+                confidence_score = score if is_deepfake else (1.0 - score)
             
         else: # video
             # Open video
@@ -106,19 +124,36 @@ async def verify_media(file: UploadFile = File(...), db: Session = Depends(get_d
                 pil_img = Image.fromarray(frame_rgb)
                 
                 results = pipe(pil_img)
+                print(f"Model results (video frame {i}):", results)  # debug log
+                
                 top_pred = results[0]
                 label = top_pred['label'].lower()
                 score = float(top_pred['score'])
                 
                 is_fake = False
-                if 'fake' in label or 'label_0' in label:
+                if 'fake' in label or '0' in label or label == 'deepfake':
                     is_fake = True
-                elif 'real' in label or 'label_1' in label:
+                elif 'real' in label or '1' in label or label == 'authentic':
                     is_fake = False
                 else:
                     is_fake = 'fake' in label
+                
+                # For models that output both classes, find the fake score
+                fake_score_frame = None
+                real_score_frame = None
+                for pred in results:
+                    pred_label = pred['label'].lower()
+                    if 'fake' in pred_label or '0' in pred_label:
+                        fake_score_frame = float(pred['score'])
+                    if 'real' in pred_label or '1' in pred_label:
+                        real_score_frame = float(pred['score'])
+                
+                if fake_score_frame is not None and real_score_frame is not None:
+                    frame_confidence = fake_score_frame if is_fake else real_score_frame
+                else:
+                    frame_confidence = score if is_fake else (1.0 - score)
                     
-                scores.append(score if is_fake else (1.0 - score))
+                scores.append(frame_confidence)
                 if is_fake:
                     fakes += 1
                     
