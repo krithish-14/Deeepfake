@@ -174,10 +174,15 @@
     .arch-node {
       cursor: pointer;
       transition: transform 0.2s ease, filter 0.2s ease;
+      pointer-events: all;
     }
     .arch-node:hover { transform: translateY(-3px); filter: brightness(1.15); }
     .arch-node:hover .arch-node-glow { opacity: 1; }
-    .arch-node-glow { opacity: 0; transition: opacity 0.2s ease; }
+    .arch-node-glow { 
+      opacity: 0; 
+      transition: opacity 0.2s ease; 
+      pointer-events: none; 
+    }
 
     /* flow arrow animation */
     @keyframes flow {
