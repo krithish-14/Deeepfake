@@ -2,17 +2,27 @@ FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
-COPY ./requirements.txt /app/requirements.txt
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential gcc libsndfile1 libgl1 && rm -rf /var/lib/apt/lists/*
-RUN python -m pip install --upgrade pip setuptools wheel
-RUN pip install --no-cache-dir -r /app/requirements.txt
+# Install system dependencies (for OpenCV etc.)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY . /app
+# Install Python dependencies
+COPY requirements.txt /app/
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir -r requirements.txt
 
-ENV DJANGO_SETTINGS_MODULE=api.settings
+# Copy application code
+COPY . /app/
 
-RUN python manage.py collectstatic --noinput || true
+# Expose the port that Render will use
+EXPOSE ${PORT:-8000}
 
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput || true && gunicorn api.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2"]
+# Command to run the FastAPI app
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
