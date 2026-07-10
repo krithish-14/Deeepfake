@@ -19,16 +19,16 @@ from models.convnext_detector import ConvNeXtDetector
 from data.dataset_loader import get_dataloaders
 
 
-def train_real_model(model_name='convnext', data_dir='datasets/ffpp', epochs=3, batch_size=16, lr=1e-4, save_dir='weights'):
+def train_real_model(model_name='convnext', data_dir='datasets/ffpp', epochs=6, batch_size=16, lr=1e-4, save_dir='weights', backbone_name='convnext_large'):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using device: {device}')
 
     if model_name == 'convnext':
-        model = ConvNeXtDetector(pretrained=True, num_classes=1).to(device)
+        model = ConvNeXtDetector(pretrained=True, num_classes=1, backbone_name=backbone_name).to(device)
     else:
         raise ValueError(f'Unsupported model: {model_name}')
 
-    criterion = nn.BCELoss()
+    criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
 
     try:
@@ -40,6 +40,7 @@ def train_real_model(model_name='convnext', data_dir='datasets/ffpp', epochs=3, 
 
     os.makedirs(save_dir, exist_ok=True)
     best_path = os.path.join(save_dir, f'{model_name}_best.pth')
+    backbone_path = os.path.join(save_dir, f'{backbone_name}_best.pth')
 
     if _MLFLOW_AVAILABLE:
         mlflow.set_experiment('deepfake-detection')
@@ -82,6 +83,7 @@ def train_real_model(model_name='convnext', data_dir='datasets/ffpp', epochs=3, 
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 torch.save(model.state_dict(), best_path)
+                torch.save(model.state_dict(), backbone_path)
 
         if _MLFLOW_AVAILABLE:
             try:
@@ -97,10 +99,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train a deepfake image detector.')
     parser.add_argument('--model', default='convnext', help='Model architecture to train')
     parser.add_argument('--data-dir', default='datasets/ffpp', help='Root dataset directory')
-    parser.add_argument('--epochs', type=int, default=3, help='Number of training epochs')
+    parser.add_argument('--epochs', type=int, default=6, help='Number of training epochs')
     parser.add_argument('--batch-size', type=int, default=16, help='Training batch size')
     parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
     parser.add_argument('--save-dir', default='weights', help='Directory to save model weights')
+    parser.add_argument('--backbone', default='convnext_large', help='timm backbone name to use')
     args = parser.parse_args()
 
     train_real_model(
@@ -110,4 +113,5 @@ if __name__ == '__main__':
         batch_size=args.batch_size,
         lr=args.lr,
         save_dir=args.save_dir,
+        backbone_name=args.backbone,
     )
