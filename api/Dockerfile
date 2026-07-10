@@ -6,13 +6,17 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Install system dependencies (for OpenCV etc.)
-RUN apt-get update --fix-missing && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    libgl1 \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+RUN set -e; \
+    for i in 1 2 3; do \
+        apt-get update --fix-missing && \
+        apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        libgl1 \
+        libglib2.0-0 \
+        && break || sleep 5; \
+    done; \
+    rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt /app/
