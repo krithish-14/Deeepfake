@@ -31,6 +31,14 @@ api/test_transformers.py
 # Local test / data folders
 dummy_data/
 
+# Dataset images (large files)
+ml/datasets/ffpp/train/real/
+ml/datasets/ffpp/train/fake/
+ml/datasets/ffpp/val/real/
+ml/datasets/ffpp/val/fake/
+ml/datasets/ffpp/test/real/
+ml/datasets/ffpp/test/fake/
+
 # Docker / compose overrides
 .env
 .docker

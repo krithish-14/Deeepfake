@@ -1,6 +1,10 @@
 import torch
 import torch.nn as nn
-import timm
+# Install timm first if missing: pip install timm
+try:
+    import timm
+except ImportError as e:
+    raise ImportError("timm library not found. Install it with `pip install timm` to use this model.") from e
 
 
 class ConvNeXtDetector(nn.Module):

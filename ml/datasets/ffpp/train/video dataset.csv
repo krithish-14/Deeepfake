@@ -1,0 +1,101 @@
+video_id,file_name,audio_file,label,category,source_tool,duration_sec,actor_id,created_date,description
+VID001,voice-cloned_001.mp4,voice-cloned_001.wav,2,Voice-Cloned,Pika Labs,10.4,ACT101,2025-09-11,Voice-Cloned sample generated using Pika Labs
+VID002,voice-cloned_002.mp4,voice-cloned_002.wav,2,Voice-Cloned,Pika Labs,9.6,ACT102,2025-09-12,Voice-Cloned sample generated using Pika Labs
+VID003,face-swapped_003.mp4,face-swapped_003.wav,1,Face-Swapped,HeyGen,10.4,ACT103,2025-09-13,Face-Swapped sample generated using HeyGen
+VID004,hybrid_(face+voice)_004.mp4,hybrid_(face+voice)_004.wav,3,Hybrid (Face+Voice),RunwayML,9.0,ACT104,2025-09-14,Hybrid (Face+Voice) sample generated using RunwayML
+VID005,real_005.mp4,real_005.wav,0,Real,Pika Labs,11.6,ACT105,2025-09-15,Real sample generated using Pika Labs
+VID006,real_006.mp4,real_006.wav,0,Real,Camera,8.5,ACT106,2025-09-16,Real sample generated using Camera
+VID007,real_007.mp4,real_007.wav,0,Real,Pika Labs,8.2,ACT107,2025-09-17,Real sample generated using Pika Labs
+VID008,voice-cloned_008.mp4,voice-cloned_008.wav,2,Voice-Cloned,HeyGen,7.6,ACT108,2025-09-18,Voice-Cloned sample generated using HeyGen
+VID009,hybrid_(face+voice)_009.mp4,hybrid_(face+voice)_009.wav,3,Hybrid (Face+Voice),Sora,7.8,ACT109,2025-09-19,Hybrid (Face+Voice) sample generated using Sora
+VID010,real_010.mp4,real_010.wav,0,Real,RunwayML,8.5,ACT110,2025-09-20,Real sample generated using RunwayML
+VID011,hybrid_(face+voice)_011.mp4,hybrid_(face+voice)_011.wav,3,Hybrid (Face+Voice),RunwayML,11.7,ACT111,2025-09-21,Hybrid (Face+Voice) sample generated using RunwayML
+VID012,face-swapped_012.mp4,face-swapped_012.wav,1,Face-Swapped,Sora,9.3,ACT112,2025-09-22,Face-Swapped sample generated using Sora
+VID013,hybrid_(face+voice)_013.mp4,hybrid_(face+voice)_013.wav,3,Hybrid (Face+Voice),Pika Labs,11.6,ACT113,2025-09-23,Hybrid (Face+Voice) sample generated using Pika Labs
+VID014,fully_generated_ai_avatar_014.mp4,fully_generated_ai_avatar_014.wav,1,Fully Generated AI Avatar,HeyGen,7.3,ACT114,2025-09-24,Fully Generated AI Avatar sample generated using HeyGen
+VID015,voice-cloned_015.mp4,voice-cloned_015.wav,2,Voice-Cloned,HeyGen,11.3,ACT115,2025-09-25,Voice-Cloned sample generated using HeyGen
+VID016,real_016.mp4,real_016.wav,0,Real,RunwayML,11.5,ACT116,2025-09-26,Real sample generated using RunwayML
+VID017,hybrid_(face+voice)_017.mp4,hybrid_(face+voice)_017.wav,3,Hybrid (Face+Voice),Sora,11.4,ACT117,2025-09-27,Hybrid (Face+Voice) sample generated using Sora
+VID018,face-swapped_018.mp4,face-swapped_018.wav,1,Face-Swapped,HeyGen,10.3,ACT118,2025-09-28,Face-Swapped sample generated using HeyGen
+VID019,hybrid_(face+voice)_019.mp4,hybrid_(face+voice)_019.wav,3,Hybrid (Face+Voice),Camera,9.8,ACT119,2025-09-29,Hybrid (Face+Voice) sample generated using Camera
+VID020,voice-cloned_020.mp4,voice-cloned_020.wav,2,Voice-Cloned,Camera,11.0,ACT120,2025-09-30,Voice-Cloned sample generated using Camera
+VID021,face-swapped_021.mp4,face-swapped_021.wav,1,Face-Swapped,Pika Labs,8.6,ACT121,2025-10-01,Face-Swapped sample generated using Pika Labs
+VID022,fully_generated_ai_avatar_022.mp4,fully_generated_ai_avatar_022.wav,1,Fully Generated AI Avatar,Camera,8.6,ACT122,2025-10-02,Fully Generated AI Avatar sample generated using Camera
+VID023,real_023.mp4,real_023.wav,0,Real,RunwayML,9.5,ACT123,2025-10-03,Real sample generated using RunwayML
+VID024,face-swapped_024.mp4,face-swapped_024.wav,1,Face-Swapped,RunwayML,11.8,ACT124,2025-10-04,Face-Swapped sample generated using RunwayML
+VID025,real_025.mp4,real_025.wav,0,Real,Sora,7.4,ACT125,2025-10-05,Real sample generated using Sora
+VID026,real_026.mp4,real_026.wav,0,Real,Camera,9.2,ACT126,2025-10-06,Real sample generated using Camera
+VID027,fully_generated_ai_avatar_027.mp4,fully_generated_ai_avatar_027.wav,1,Fully Generated AI Avatar,RunwayML,10.1,ACT127,2025-10-07,Fully Generated AI Avatar sample generated using RunwayML
+VID028,real_028.mp4,real_028.wav,0,Real,Pika Labs,7.5,ACT128,2025-10-08,Real sample generated using Pika Labs
+VID029,face-swapped_029.mp4,face-swapped_029.wav,1,Face-Swapped,HeyGen,7.8,ACT129,2025-10-09,Face-Swapped sample generated using HeyGen
+VID030,real_030.mp4,real_030.wav,0,Real,Pika Labs,11.1,ACT130,2025-10-10,Real sample generated using Pika Labs
+VID031,voice-cloned_031.mp4,voice-cloned_031.wav,2,Voice-Cloned,Sora,12.0,ACT131,2025-10-11,Voice-Cloned sample generated using Sora
+VID032,hybrid_(face+voice)_032.mp4,hybrid_(face+voice)_032.wav,3,Hybrid (Face+Voice),Sora,11.9,ACT132,2025-10-12,Hybrid (Face+Voice) sample generated using Sora
+VID033,voice-cloned_033.mp4,voice-cloned_033.wav,2,Voice-Cloned,Pika Labs,11.0,ACT133,2025-10-13,Voice-Cloned sample generated using Pika Labs
+VID034,face-swapped_034.mp4,face-swapped_034.wav,1,Face-Swapped,RunwayML,9.6,ACT134,2025-10-14,Face-Swapped sample generated using RunwayML
+VID035,fully_generated_ai_avatar_035.mp4,fully_generated_ai_avatar_035.wav,1,Fully Generated AI Avatar,HeyGen,9.8,ACT135,2025-10-15,Fully Generated AI Avatar sample generated using HeyGen
+VID036,hybrid_(face+voice)_036.mp4,hybrid_(face+voice)_036.wav,3,Hybrid (Face+Voice),Sora,9.7,ACT136,2025-10-16,Hybrid (Face+Voice) sample generated using Sora
+VID037,face-swapped_037.mp4,face-swapped_037.wav,1,Face-Swapped,Sora,10.7,ACT137,2025-10-17,Face-Swapped sample generated using Sora
+VID038,hybrid_(face+voice)_038.mp4,hybrid_(face+voice)_038.wav,3,Hybrid (Face+Voice),RunwayML,8.8,ACT138,2025-10-18,Hybrid (Face+Voice) sample generated using RunwayML
+VID039,face-swapped_039.mp4,face-swapped_039.wav,1,Face-Swapped,Camera,9.7,ACT139,2025-10-19,Face-Swapped sample generated using Camera
+VID040,fully_generated_ai_avatar_040.mp4,fully_generated_ai_avatar_040.wav,1,Fully Generated AI Avatar,Sora,8.0,ACT140,2025-10-20,Fully Generated AI Avatar sample generated using Sora
+VID041,hybrid_(face+voice)_041.mp4,hybrid_(face+voice)_041.wav,3,Hybrid (Face+Voice),Camera,10.5,ACT141,2025-10-21,Hybrid (Face+Voice) sample generated using Camera
+VID042,fully_generated_ai_avatar_042.mp4,fully_generated_ai_avatar_042.wav,1,Fully Generated AI Avatar,RunwayML,10.5,ACT142,2025-10-22,Fully Generated AI Avatar sample generated using RunwayML
+VID043,fully_generated_ai_avatar_043.mp4,fully_generated_ai_avatar_043.wav,1,Fully Generated AI Avatar,RunwayML,8.8,ACT143,2025-10-23,Fully Generated AI Avatar sample generated using RunwayML
+VID044,fully_generated_ai_avatar_044.mp4,fully_generated_ai_avatar_044.wav,1,Fully Generated AI Avatar,Camera,8.2,ACT144,2025-10-24,Fully Generated AI Avatar sample generated using Camera
+VID045,voice-cloned_045.mp4,voice-cloned_045.wav,2,Voice-Cloned,Pika Labs,11.0,ACT145,2025-10-25,Voice-Cloned sample generated using Pika Labs
+VID046,hybrid_(face+voice)_046.mp4,hybrid_(face+voice)_046.wav,3,Hybrid (Face+Voice),Sora,10.6,ACT146,2025-10-26,Hybrid (Face+Voice) sample generated using Sora
+VID047,real_047.mp4,real_047.wav,0,Real,HeyGen,10.1,ACT147,2025-10-27,Real sample generated using HeyGen
+VID048,voice-cloned_048.mp4,voice-cloned_048.wav,2,Voice-Cloned,Camera,8.7,ACT148,2025-10-28,Voice-Cloned sample generated using Camera
+VID049,hybrid_(face+voice)_049.mp4,hybrid_(face+voice)_049.wav,3,Hybrid (Face+Voice),Camera,8.4,ACT149,2025-10-29,Hybrid (Face+Voice) sample generated using Camera
+VID050,voice-cloned_050.mp4,voice-cloned_050.wav,2,Voice-Cloned,Sora,7.6,ACT150,2025-10-30,Voice-Cloned sample generated using Sora
+VID051,face-swapped_051.mp4,face-swapped_051.wav,1,Face-Swapped,Sora,9.6,ACT151,2025-10-31,Face-Swapped sample generated using Sora
+VID052,real_052.mp4,real_052.wav,0,Real,Pika Labs,11.5,ACT152,2025-11-01,Real sample generated using Pika Labs
+VID053,fully_generated_ai_avatar_053.mp4,fully_generated_ai_avatar_053.wav,1,Fully Generated AI Avatar,Camera,7.6,ACT153,2025-11-02,Fully Generated AI Avatar sample generated using Camera
+VID054,voice-cloned_054.mp4,voice-cloned_054.wav,2,Voice-Cloned,HeyGen,11.0,ACT154,2025-11-03,Voice-Cloned sample generated using HeyGen
+VID055,fully_generated_ai_avatar_055.mp4,fully_generated_ai_avatar_055.wav,1,Fully Generated AI Avatar,Camera,9.9,ACT155,2025-11-04,Fully Generated AI Avatar sample generated using Camera
+VID056,voice-cloned_056.mp4,voice-cloned_056.wav,2,Voice-Cloned,RunwayML,7.6,ACT156,2025-11-05,Voice-Cloned sample generated using RunwayML
+VID057,voice-cloned_057.mp4,voice-cloned_057.wav,2,Voice-Cloned,HeyGen,9.3,ACT157,2025-11-06,Voice-Cloned sample generated using HeyGen
+VID058,voice-cloned_058.mp4,voice-cloned_058.wav,2,Voice-Cloned,Camera,9.5,ACT158,2025-11-07,Voice-Cloned sample generated using Camera
+VID059,fully_generated_ai_avatar_059.mp4,fully_generated_ai_avatar_059.wav,1,Fully Generated AI Avatar,Camera,10.0,ACT159,2025-11-08,Fully Generated AI Avatar sample generated using Camera
+VID060,real_060.mp4,real_060.wav,0,Real,Pika Labs,8.4,ACT160,2025-11-09,Real sample generated using Pika Labs
+VID061,fully_generated_ai_avatar_061.mp4,fully_generated_ai_avatar_061.wav,1,Fully Generated AI Avatar,RunwayML,7.4,ACT161,2025-11-10,Fully Generated AI Avatar sample generated using RunwayML
+VID062,hybrid_(face+voice)_062.mp4,hybrid_(face+voice)_062.wav,3,Hybrid (Face+Voice),RunwayML,9.6,ACT162,2025-11-11,Hybrid (Face+Voice) sample generated using RunwayML
+VID063,face-swapped_063.mp4,face-swapped_063.wav,1,Face-Swapped,Pika Labs,10.7,ACT163,2025-11-12,Face-Swapped sample generated using Pika Labs
+VID064,hybrid_(face+voice)_064.mp4,hybrid_(face+voice)_064.wav,3,Hybrid (Face+Voice),HeyGen,9.0,ACT164,2025-11-13,Hybrid (Face+Voice) sample generated using HeyGen
+VID065,face-swapped_065.mp4,face-swapped_065.wav,1,Face-Swapped,Sora,8.0,ACT165,2025-11-14,Face-Swapped sample generated using Sora
+VID066,fully_generated_ai_avatar_066.mp4,fully_generated_ai_avatar_066.wav,1,Fully Generated AI Avatar,Sora,9.5,ACT166,2025-11-15,Fully Generated AI Avatar sample generated using Sora
+VID067,hybrid_(face+voice)_067.mp4,hybrid_(face+voice)_067.wav,3,Hybrid (Face+Voice),HeyGen,10.7,ACT167,2025-11-16,Hybrid (Face+Voice) sample generated using HeyGen
+VID068,face-swapped_068.mp4,face-swapped_068.wav,1,Face-Swapped,Camera,10.6,ACT168,2025-11-17,Face-Swapped sample generated using Camera
+VID069,real_069.mp4,real_069.wav,0,Real,HeyGen,11.2,ACT169,2025-11-18,Real sample generated using HeyGen
+VID070,hybrid_(face+voice)_070.mp4,hybrid_(face+voice)_070.wav,3,Hybrid (Face+Voice),Pika Labs,11.7,ACT170,2025-11-19,Hybrid (Face+Voice) sample generated using Pika Labs
+VID071,face-swapped_071.mp4,face-swapped_071.wav,1,Face-Swapped,HeyGen,11.4,ACT171,2025-11-20,Face-Swapped sample generated using HeyGen
+VID072,voice-cloned_072.mp4,voice-cloned_072.wav,2,Voice-Cloned,HeyGen,11.9,ACT172,2025-11-21,Voice-Cloned sample generated using HeyGen
+VID073,fully_generated_ai_avatar_073.mp4,fully_generated_ai_avatar_073.wav,1,Fully Generated AI Avatar,Pika Labs,7.4,ACT173,2025-11-22,Fully Generated AI Avatar sample generated using Pika Labs
+VID074,voice-cloned_074.mp4,voice-cloned_074.wav,2,Voice-Cloned,HeyGen,8.1,ACT174,2025-11-23,Voice-Cloned sample generated using HeyGen
+VID075,fully_generated_ai_avatar_075.mp4,fully_generated_ai_avatar_075.wav,1,Fully Generated AI Avatar,Sora,10.3,ACT175,2025-11-24,Fully Generated AI Avatar sample generated using Sora
+VID076,real_076.mp4,real_076.wav,0,Real,Pika Labs,7.2,ACT176,2025-11-25,Real sample generated using Pika Labs
+VID077,voice-cloned_077.mp4,voice-cloned_077.wav,2,Voice-Cloned,Sora,7.6,ACT177,2025-11-26,Voice-Cloned sample generated using Sora
+VID078,real_078.mp4,real_078.wav,0,Real,Camera,8.8,ACT178,2025-11-27,Real sample generated using Camera
+VID079,hybrid_(face+voice)_079.mp4,hybrid_(face+voice)_079.wav,3,Hybrid (Face+Voice),Camera,9.0,ACT179,2025-11-28,Hybrid (Face+Voice) sample generated using Camera
+VID080,real_080.mp4,real_080.wav,0,Real,Sora,11.6,ACT180,2025-11-29,Real sample generated using Sora
+VID081,fully_generated_ai_avatar_081.mp4,fully_generated_ai_avatar_081.wav,1,Fully Generated AI Avatar,RunwayML,8.9,ACT181,2025-11-30,Fully Generated AI Avatar sample generated using RunwayML
+VID082,hybrid_(face+voice)_082.mp4,hybrid_(face+voice)_082.wav,3,Hybrid (Face+Voice),Sora,8.0,ACT182,2025-12-01,Hybrid (Face+Voice) sample generated using Sora
+VID083,voice-cloned_083.mp4,voice-cloned_083.wav,2,Voice-Cloned,Sora,10.5,ACT183,2025-12-02,Voice-Cloned sample generated using Sora
+VID084,real_084.mp4,real_084.wav,0,Real,HeyGen,11.9,ACT184,2025-12-03,Real sample generated using HeyGen
+VID085,hybrid_(face+voice)_085.mp4,hybrid_(face+voice)_085.wav,3,Hybrid (Face+Voice),Sora,7.1,ACT185,2025-12-04,Hybrid (Face+Voice) sample generated using Sora
+VID086,face-swapped_086.mp4,face-swapped_086.wav,1,Face-Swapped,Camera,11.1,ACT186,2025-12-05,Face-Swapped sample generated using Camera
+VID087,face-swapped_087.mp4,face-swapped_087.wav,1,Face-Swapped,Sora,11.2,ACT187,2025-12-06,Face-Swapped sample generated using Sora
+VID088,hybrid_(face+voice)_088.mp4,hybrid_(face+voice)_088.wav,3,Hybrid (Face+Voice),Sora,10.8,ACT188,2025-12-07,Hybrid (Face+Voice) sample generated using Sora
+VID089,real_089.mp4,real_089.wav,0,Real,Pika Labs,11.3,ACT189,2025-12-08,Real sample generated using Pika Labs
+VID090,real_090.mp4,real_090.wav,0,Real,RunwayML,10.7,ACT190,2025-12-09,Real sample generated using RunwayML
+VID091,fully_generated_ai_avatar_091.mp4,fully_generated_ai_avatar_091.wav,1,Fully Generated AI Avatar,HeyGen,7.9,ACT191,2025-12-10,Fully Generated AI Avatar sample generated using HeyGen
+VID092,fully_generated_ai_avatar_092.mp4,fully_generated_ai_avatar_092.wav,1,Fully Generated AI Avatar,Sora,8.0,ACT192,2025-12-11,Fully Generated AI Avatar sample generated using Sora
+VID093,face-swapped_093.mp4,face-swapped_093.wav,1,Face-Swapped,Camera,11.2,ACT193,2025-12-12,Face-Swapped sample generated using Camera
+VID094,hybrid_(face+voice)_094.mp4,hybrid_(face+voice)_094.wav,3,Hybrid (Face+Voice),HeyGen,11.4,ACT194,2025-12-13,Hybrid (Face+Voice) sample generated using HeyGen
+VID095,fully_generated_ai_avatar_095.mp4,fully_generated_ai_avatar_095.wav,1,Fully Generated AI Avatar,Camera,11.9,ACT195,2025-12-14,Fully Generated AI Avatar sample generated using Camera
+VID096,face-swapped_096.mp4,face-swapped_096.wav,1,Face-Swapped,RunwayML,8.9,ACT196,2025-12-15,Face-Swapped sample generated using RunwayML
+VID097,fully_generated_ai_avatar_097.mp4,fully_generated_ai_avatar_097.wav,1,Fully Generated AI Avatar,Camera,7.5,ACT197,2025-12-16,Fully Generated AI Avatar sample generated using Camera
+VID098,face-swapped_098.mp4,face-swapped_098.wav,1,Face-Swapped,HeyGen,10.1,ACT198,2025-12-17,Face-Swapped sample generated using HeyGen
+VID099,hybrid_(face+voice)_099.mp4,hybrid_(face+voice)_099.wav,3,Hybrid (Face+Voice),RunwayML,10.0,ACT199,2025-12-18,Hybrid (Face+Voice) sample generated using RunwayML
+VID100,real_100.mp4,real_100.wav,0,Real,Camera,11.2,ACT200,2025-12-19,Real sample generated using Camera
