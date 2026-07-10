@@ -58,7 +58,7 @@ class ResNetBiLSTM(nn.Module):
         
         # Classify
         logits = self.fc(last_out)
-        return torch.sigmoid(logits)
+        return logits  # Return raw logits for BCEWithLogitsLoss compatibility
 
 if __name__ == '__main__':
     model = ResNetBiLSTM()

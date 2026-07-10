@@ -1,13 +1,20 @@
 
 import os
-import torch
-import torch.nn as nn
-import torch.optim as optim
+import torch  # type: ignore
+import torch.nn as nn  # type: ignore
+import torch.optim as optim  # type: ignore
 from tqdm import tqdm
-import mlflow
-import mlflow.pytorch
+from contextlib import nullcontext
 import sys
 from pathlib import Path
+
+# mlflow is optional for lightweight runs; training will proceed without it if missing
+try:
+    import mlflow  # type: ignore
+    _MLFLOW_AVAILABLE = True
+except Exception:
+    mlflow = None
+    _MLFLOW_AVAILABLE = False
 
 # Add parent directory to path to import models and dataset loader
 sys.path.insert(0, str(Path(__file__).parent))
@@ -28,7 +35,7 @@ def train_model(model_name, data_dir, epochs=10, batch_size=32, lr=1e-4, device=
     else:
         raise ValueError(f"Unsupported model: {model_name}")
 
-    criterion = nn.BCELoss()
+    criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2, verbose=True)
 
@@ -39,105 +46,110 @@ def train_model(model_name, data_dir, epochs=10, batch_size=32, lr=1e-4, device=
     print(f"Train samples: {len(train_loader.dataset)}")
     print(f"Validation samples: {len(val_loader.dataset)}")
     
-    mlflow.start_run()
-    mlflow.log_params({
-        "model": model_name, 
-        "epochs": epochs, 
-        "batch_size": batch_size, 
-        "lr": lr,
-        "device": str(device)
-    })
+    run_ctx = mlflow.start_run() if _MLFLOW_AVAILABLE else nullcontext()  # type: ignore
+    with run_ctx:
+        if _MLFLOW_AVAILABLE:
+            mlflow.log_params({  # type: ignore
+                "model": model_name, 
+                "epochs": epochs, 
+                "batch_size": batch_size, 
+                "lr": lr,
+                "device": str(device)
+            })
 
-    best_val_loss = float('inf')
-    os.makedirs('weights', exist_ok=True)
+        best_val_loss = float('inf')
+        os.makedirs('weights', exist_ok=True)
 
-    for epoch in range(epochs):
-        # Training phase
-        model.train()
-        running_train_loss = 0.0
-        train_correct = 0
-        train_total = 0
-        
-        train_pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} [Train]")
-        for inputs, labels in train_pbar:
-            inputs = inputs.to(device)
-            labels = labels.to(device)
+        for epoch in range(epochs):
+            # Training phase
+            model.train()
+            running_train_loss = 0.0
+            train_correct = 0
+            train_total = 0
             
-            optimizer.zero_grad()
-            
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-            
-            running_train_loss += loss.item()
-            
-            # Calculate training accuracy
-            predicted = (outputs > 0.5).float()
-            train_total += labels.size(0)
-            train_correct += (predicted == labels).sum().item()
-            
-            train_pbar.set_postfix({'loss': loss.item()})
-            
-        epoch_train_loss = running_train_loss / len(train_loader)
-        epoch_train_acc = train_correct / train_total
-        
-        # Validation phase
-        model.eval()
-        running_val_loss = 0.0
-        val_correct = 0
-        val_total = 0
-        
-        with torch.no_grad():
-            val_pbar = tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} [Val]")
-            for inputs, labels in val_pbar:
+            train_pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} [Train]")
+            for inputs, labels in train_pbar:
                 inputs = inputs.to(device)
                 labels = labels.to(device)
                 
+                optimizer.zero_grad()
+                
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
                 
-                running_val_loss += loss.item()
+                running_train_loss += loss.item()
                 
-                # Calculate validation accuracy
-                predicted = (outputs > 0.5).float()
-                val_total += labels.size(0)
-                val_correct += (predicted == labels).sum().item()
+                # Calculate training accuracy
+                predicted = (torch.sigmoid(outputs) > 0.5).float()
+                train_total += labels.size(0)
+                train_correct += (predicted == labels).sum().item()
                 
-                val_pbar.set_postfix({'loss': loss.item()})
+                train_pbar.set_postfix({'loss': loss.item()})
                 
-        epoch_val_loss = running_val_loss / len(val_loader)
-        epoch_val_acc = val_correct / val_total
-        
-        # Update scheduler
-        scheduler.step(epoch_val_loss)
-        
-        # Log metrics
-        print(f"\nEpoch {epoch+1}:")
-        print(f"  Train Loss: {epoch_train_loss:.4f}, Acc: {epoch_train_acc:.4f}")
-        print(f"  Val Loss: {epoch_val_loss:.4f}, Acc: {epoch_val_acc:.4f}")
-        
-        mlflow.log_metrics({
-            "train_loss": epoch_train_loss,
-            "train_acc": epoch_train_acc,
-            "val_loss": epoch_val_loss,
-            "val_acc": epoch_val_acc
-        }, step=epoch)
-        
-        # Save best model
-        if epoch_val_loss < best_val_loss:
-            best_val_loss = epoch_val_loss
-            best_model_path = f'weights/{model_name}_best.pth'
-            torch.save(model.state_dict(), best_model_path)
-            print(f"  Best model saved to {best_model_path} (val_loss: {best_val_loss:.4f})")
-            mlflow.log_artifact(best_model_path)
+            epoch_train_loss = running_train_loss / len(train_loader)
+            epoch_train_acc = train_correct / train_total
+            
+            # Validation phase
+            model.eval()
+            running_val_loss = 0.0
+            val_correct = 0
+            val_total = 0
+            
+            with torch.no_grad():
+                val_pbar = tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} [Val]")
+                for inputs, labels in val_pbar:
+                    inputs = inputs.to(device)
+                    labels = labels.to(device)
+                    
+                    outputs = model(inputs)
+                    loss = criterion(outputs, labels)
+                    
+                    running_val_loss += loss.item()
+                    
+                    # Calculate validation accuracy
+                    predicted = (torch.sigmoid(outputs) > 0.5).float()
+                    val_total += labels.size(0)
+                    val_correct += (predicted == labels).sum().item()
+                    
+                    val_pbar.set_postfix({'loss': loss.item()})
+                    
+            epoch_val_loss = running_val_loss / len(val_loader)
+            epoch_val_acc = val_correct / val_total
+            
+            # Update scheduler
+            scheduler.step(epoch_val_loss)
+            
+            # Log metrics
+            print(f"\nEpoch {epoch+1}:")
+            print(f"  Train Loss: {epoch_train_loss:.4f}, Acc: {epoch_train_acc:.4f}")
+            print(f"  Val Loss: {epoch_val_loss:.4f}, Acc: {epoch_val_acc:.4f}")
+            
+            if _MLFLOW_AVAILABLE:
+                mlflow.log_metrics({  # type: ignore
+                    "train_loss": epoch_train_loss,
+                    "train_acc": epoch_train_acc,
+                    "val_loss": epoch_val_loss,
+                    "val_acc": epoch_val_acc
+                }, step=epoch)
+            
+            # Save best model
+            if epoch_val_loss < best_val_loss:
+                best_val_loss = epoch_val_loss
+                best_model_path = f'weights/{model_name}_best.pth'
+                torch.save(model.state_dict(), best_model_path)
+                print(f"  Best model saved to {best_model_path} (val_loss: {best_val_loss:.4f})")
+                if _MLFLOW_AVAILABLE:
+                    mlflow.log_artifact(best_model_path)  # type: ignore
 
-    # Save final model
-    final_model_path = f'weights/{model_name}_final.pth'
-    torch.save(model.state_dict(), final_model_path)
-    print(f"\nTraining complete! Final model saved to {final_model_path}")
-    mlflow.log_artifact(final_model_path)
-    mlflow.end_run()
+        # Save final model
+        final_model_path = f'weights/{model_name}_final.pth'
+        torch.save(model.state_dict(), final_model_path)
+        print(f"\nTraining complete! Final model saved to {final_model_path}")
+        if _MLFLOW_AVAILABLE:
+            mlflow.log_artifact(final_model_path)  # type: ignore
+            mlflow.end_run()  # type: ignore
 
 if __name__ == '__main__':
     # Train with your FF++ dataset

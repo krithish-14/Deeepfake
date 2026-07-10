@@ -1,6 +1,5 @@
-import torch
-from sklearn.metrics import roc_auc_score, precision_score, recall_score
-from models.ensemble import MultimodalEnsemble
+import torch  # type: ignore
+from sklearn.metrics import roc_auc_score, precision_score, recall_score  # type: ignore
 from data.dataset_loader import get_dataloaders
 
 
@@ -29,8 +28,9 @@ def evaluate_real_model(model_path='weights/convnext_best.pth', data_dir='datase
     with torch.no_grad():
         for inputs, labels in val_loader:
             inputs = inputs.to(device)
-            outputs = model(inputs).cpu().view(-1)
-            preds.extend(outputs.tolist())
+            logits = model(inputs).cpu().view(-1)
+            probs = torch.sigmoid(logits)
+            preds.extend(probs.tolist())
             targets.extend(labels.view(-1).tolist())
 
     preds = torch.tensor(preds)

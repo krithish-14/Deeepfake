@@ -15,10 +15,6 @@ Usage:
 """
 
 import argparse
-import os
-import io
-import csv
-import hashlib
 from pathlib import Path
 
 from tqdm import tqdm
@@ -40,7 +36,7 @@ def build_fake_split(out_dir: Path, per_class: int) -> list[dict]:
     DF40-derived set covers 40 distinct deepfake generation methods —
     far more diverse than a single GAN, which matters for generalization.
     """
-    from datasets import load_dataset
+    from datasets import load_dataset  # type: ignore
 
     print("Loading pujanpaudel/deepfake_face_classification (fake half)...")
     ds = load_dataset("pujanpaudel/deepfake_face_classification", split="train")
@@ -59,7 +55,7 @@ def build_fake_split(out_dir: Path, per_class: int) -> list[dict]:
             "image_id": f"fake_{i:06d}",
             "image_path": path,
             "label": "FAKE",
-            "label_numeric": 0,
+            "label_numeric": 1,
             "source_dataset": "pujanpaudel/deepfake_face_classification (DF40-derived)",
             "fake_method": "mixed (40 generation methods, see DF40 paper)",
         })
@@ -71,7 +67,7 @@ def build_real_split(out_dir: Path, per_class: int) -> list[dict]:
     Pulls real human face photos. FFHQ (via Hugging Face mirror) is the
     standard choice — genuine photographs, not synthetic/placeholder avatars.
     """
-    from datasets import load_dataset
+    from datasets import load_dataset  # type: ignore
 
     print("Loading a real-face dataset (FFHQ subset)...")
     ds = load_dataset("Ryan-sjtu/ffhq512-caption", split="train")  # example mirror; verify availability
@@ -89,7 +85,7 @@ def build_real_split(out_dir: Path, per_class: int) -> list[dict]:
             "image_id": f"real_{i:06d}",
             "image_path": path,
             "label": "REAL",
-            "label_numeric": 1,
+            "label_numeric": 0,
             "source_dataset": "FFHQ (via HF mirror)",
             "fake_method": "None",
         })

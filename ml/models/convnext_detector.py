@@ -37,7 +37,7 @@ class ConvNeXtDetector(nn.Module):
 
     def forward(self, x):
         logits = self.backbone(x)
-        return torch.sigmoid(logits)
+        return logits  # Return raw logits for BCEWithLogitsLoss compatibility
 
 
 if __name__ == '__main__':

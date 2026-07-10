@@ -46,7 +46,7 @@ class GenConViTVideo(nn.Module):
         # Flatten and classify
         temporal_feats = temporal_feats.view(batch_size, -1)
         logits = self.fc(temporal_feats)
-        return torch.sigmoid(logits)
+        return logits  # Return raw logits for BCEWithLogitsLoss compatibility
 
 if __name__ == '__main__':
     model = GenConViTVideo()

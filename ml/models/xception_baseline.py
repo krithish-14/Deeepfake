@@ -25,8 +25,7 @@ class XceptionBaseline(nn.Module):
     def forward(self, x):
         # x is expected to be [batch_size, 3, 299, 299] for Xception
         logits = self.model(x)
-        # Return probability of being a deepfake (class 1)
-        return torch.sigmoid(logits)
+        return logits  # Return raw logits for BCEWithLogitsLoss compatibility
 
 if __name__ == '__main__':
     # Quick test

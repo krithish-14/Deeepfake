@@ -40,8 +40,11 @@ def test_inference():
         tensor = transform(image=image)['image'].unsqueeze(0) # Add batch dimension
         
         with torch.no_grad():
-            xcep_out = xception(tensor)
-            conv_out = convnext(tensor)
+            xcep_logits = xception(tensor)
+            conv_logits = convnext(tensor)
+            
+            xcep_out = torch.sigmoid(xcep_logits)
+            conv_out = torch.sigmoid(conv_logits)
             
             # Mocking the video/temporal models for image-only inference
             mock_genconvit = torch.rand(1, 1)
