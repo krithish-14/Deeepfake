@@ -32,7 +32,8 @@ class ConvNeXtDetector(nn.Module):
             raise AttributeError('Unexpected backbone head structure')
 
     def forward(self, x):
-        return self.backbone(x)
+        logits = self.backbone(x)
+        return torch.sigmoid(logits)
 
 
 if __name__ == '__main__':
