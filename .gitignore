@@ -24,6 +24,9 @@ dist/
 # Local runtime data
 api/deepfake_logs.sqlite3
 tmp_hf_test.py
+api/test_backend.py
+api/test_router.py
+api/test_transformers.py
 
 # Local test / data folders
 dummy_data/
